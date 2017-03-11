@@ -61,6 +61,7 @@
 #include <linux/migrate.h>
 #include <linux/hugetlb.h>
 #include <linux/sched/rt.h>
+#include <linux/sched/mm.h>
 #include <linux/page_owner.h>
 #include <linux/kthread.h>
 #include <linux/memcontrol.h>
@@ -872,7 +873,8 @@ done_merging:
 		higher_page = page + (combined_pfn - pfn);
 		buddy_pfn = __find_buddy_pfn(combined_pfn, order + 1);
 		higher_buddy = higher_page + (buddy_pfn - combined_pfn);
-		if (page_is_buddy(higher_page, higher_buddy, order + 1)) {
+		if (pfn_valid_within(buddy_pfn) &&
+		    page_is_buddy(higher_page, higher_buddy, order + 1)) {
 			list_add_tail(&page->lru,
 				&zone->free_area[order].free_list[migratetype]);
 			goto out;
@@ -5925,7 +5927,7 @@ static unsigned long __paginginit calc_memmap_size(unsigned long spanned_pages,
 	 * the zone and SPARSEMEM is in use. If there are holes within the
 	 * zone, each populated memory region may cost us one or two extra
 	 * memmap pages due to alignment because memmap pages for each
-	 * populated regions may not naturally algined on page boundary.
+	 * populated regions may not be naturally aligned on page boundary.
 	 * So the (present_pages >> 4) heuristic is a tradeoff for that.
 	 */
 	if (spanned_pages > present_pages + (present_pages >> 4) &&
