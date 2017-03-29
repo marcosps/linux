@@ -487,7 +487,7 @@ lstcon_rpc_trans_interpreter(struct lstcon_rpc_trans *trans,
 				   sizeof(struct list_head)))
 			return -EFAULT;
 
-		if (tmp.next == head_up)
+		if ((struct list_head __user *)tmp.next == head_up)
 			return 0;
 
 		next = tmp.next;
