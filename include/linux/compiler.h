@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __LINUX_COMPILER_H
 #define __LINUX_COMPILER_H
 
@@ -185,8 +186,34 @@ void ftrace_likely_update(struct ftrace_likely_data *f, int val,
 #endif
 
 /* Unreachable code */
+#ifdef CONFIG_STACK_VALIDATION
+#define annotate_reachable() ({						\
+	asm("%c0:\n\t"							\
+	    ".pushsection .discard.reachable\n\t"			\
+	    ".long %c0b - .\n\t"					\
+	    ".popsection\n\t" : : "i" (__COUNTER__));			\
+})
+#define annotate_unreachable() ({					\
+	asm("%c0:\n\t"							\
+	    ".pushsection .discard.unreachable\n\t"			\
+	    ".long %c0b - .\n\t"					\
+	    ".popsection\n\t" : : "i" (__COUNTER__));			\
+})
+#define ASM_UNREACHABLE							\
+	"999:\n\t"							\
+	".pushsection .discard.unreachable\n\t"				\
+	".long 999b - .\n\t"						\
+	".popsection\n\t"
+#else
+#define annotate_reachable()
+#define annotate_unreachable()
+#endif
+
+#ifndef ASM_UNREACHABLE
+# define ASM_UNREACHABLE
+#endif
 #ifndef unreachable
-# define unreachable() do { } while (1)
+# define unreachable() do { annotate_reachable(); do { } while (1); } while (0)
 #endif
 
 /*
@@ -475,6 +502,10 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define __visible
 #endif
 
+#ifndef __nostackprotector
+# define __nostackprotector
+#endif
+
 /*
  * Assume alignment of return value.
  */
@@ -517,7 +548,8 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 # define __compiletime_error_fallback(condition) do { } while (0)
 #endif
 
-#define __compiletime_assert(condition, msg, prefix, suffix)		\
+#ifdef __OPTIMIZE__
+# define __compiletime_assert(condition, msg, prefix, suffix)		\
 	do {								\
 		bool __cond = !(condition);				\
 		extern void prefix ## suffix(void) __compiletime_error(msg); \
@@ -525,6 +557,9 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 			prefix ## suffix();				\
 		__compiletime_error_fallback(__cond);			\
 	} while (0)
+#else
+# define __compiletime_assert(condition, msg, prefix, suffix) do { } while (0)
+#endif
 
 #define _compiletime_assert(condition, msg, prefix, suffix) \
 	__compiletime_assert(condition, msg, prefix, suffix)
