@@ -1334,6 +1334,7 @@ void setup_new_exec(struct linux_binprm * bprm)
 	if (bprm->secureexec) {
 		/* Make sure parent cannot signal privileged process. */
 		current->pdeath_signal = 0;
+		current->signal->pdeath_signal_proc = 0;
 
 		/*
 		 * For secureexec, reset the stack limit to sane default to
@@ -1911,7 +1912,7 @@ void set_dumpable(struct mm_struct *mm, int value)
 		return;
 
 	do {
-		old = ACCESS_ONCE(mm->flags);
+		old = READ_ONCE(mm->flags);
 		new = (old & ~MMF_DUMPABLE_MASK) | value;
 	} while (cmpxchg(&mm->flags, old, new) != old);
 }

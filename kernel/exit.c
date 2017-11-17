@@ -635,6 +635,10 @@ static void reparent_leader(struct task_struct *father, struct task_struct *p,
 	if (unlikely(p->exit_state == EXIT_DEAD))
 		return;
 
+	if (p->signal->pdeath_signal_proc)
+		group_send_sig_info(p->signal->pdeath_signal_proc,
+				    SEND_SIG_NOINFO, p);
+
 	/* We don't want people slaying init. */
 	p->exit_signal = SIGCHLD;
 
@@ -1339,7 +1343,7 @@ static int wait_consider_task(struct wait_opts *wo, int ptrace,
 	 * Ensure that EXIT_ZOMBIE -> EXIT_DEAD/EXIT_TRACE transition
 	 * can't confuse the checks below.
 	 */
-	int exit_state = ACCESS_ONCE(p->exit_state);
+	int exit_state = READ_ONCE(p->exit_state);
 	int ret;
 
 	if (unlikely(exit_state == EXIT_DEAD))

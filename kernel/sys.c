@@ -111,6 +111,12 @@
 #ifndef SET_FP_MODE
 # define SET_FP_MODE(a,b)	(-EINVAL)
 #endif
+#ifndef SVE_SET_VL
+# define SVE_SET_VL(a)		(-EINVAL)
+#endif
+#ifndef SVE_GET_VL
+# define SVE_GET_VL()		(-EINVAL)
+#endif
 
 /*
  * this is where the system-wide overflow UID and GID are defined, for
@@ -2207,6 +2213,17 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 	case PR_GET_PDEATHSIG:
 		error = put_user(me->pdeath_signal, (int __user *)arg2);
 		break;
+	case PR_SET_PDEATHSIG_PROC:
+		if (!valid_signal(arg2)) {
+			error = -EINVAL;
+			break;
+		}
+		me->signal->pdeath_signal_proc = arg2;
+		break;
+	case PR_GET_PDEATHSIG_PROC:
+		error = put_user(me->signal->pdeath_signal_proc,
+				 (int __user *)arg2);
+		break;
 	case PR_GET_DUMPABLE:
 		error = get_dumpable(me->mm);
 		break;
@@ -2385,6 +2402,12 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		break;
 	case PR_GET_FP_MODE:
 		error = GET_FP_MODE(me);
+		break;
+	case PR_SVE_SET_VL:
+		error = SVE_SET_VL(arg2);
+		break;
+	case PR_SVE_GET_VL:
+		error = SVE_GET_VL();
 		break;
 	default:
 		error = -EINVAL;
