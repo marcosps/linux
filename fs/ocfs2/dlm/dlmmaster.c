@@ -2648,8 +2648,8 @@ static int dlm_migrate_lockres(struct dlm_ctxt *dlm,
 	 * otherwise the assert_master from the new
 	 * master will destroy this.
 	 */
-	dlm_get_mle_inuse(mle);
-	mle_added = 1;
+	if (ret != -EEXIST)
+		dlm_get_mle_inuse(mle);
 
 	spin_unlock(&dlm->master_lock);
 	spin_unlock(&dlm->spinlock);
