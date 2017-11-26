@@ -35,7 +35,10 @@ ide		git	git://git.kernel.org/pub/scm/linux/kernel/git/davem/ide.git#master
 vfio-fixes	git	git://github.com/awilliam/linux-vfio.git#for-linus
 kselftest-fixes	git	git://git.kernel.org/pub/scm/linux/kernel/git/shuah/linux-kselftest.git#fixes
 backlight-fixes	git	git://git.kernel.org/pub/scm/linux/kernel/git/lee/backlight.git#for-backlight-fixes
+<<<<<<< HEAD
 ftrace-fixes	git	git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git#for-next-urgent
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 nand-fixes	git	git://git.infradead.org/linux-mtd.git#nand/fixes
 spi-nor-fixes	git	git://git.infradead.org/linux-mtd.git#spi-nor/fixes
 mfd-fixes	git	git://git.kernel.org/pub/scm/linux/kernel/git/lee/mfd.git#for-mfd-fixes
@@ -58,19 +61,28 @@ amlogic		git	git://git.kernel.org/pub/scm/linux/kernel/git/khilman/linux-amlogic
 aspeed		git	git://git.kernel.org/pub/scm/linux/kernel/git/joel/aspeed.git#for-next
 at91		git	git://git.kernel.org/pub/scm/linux/kernel/git/nferre/linux-at91.git#at91-next
 bcm2835		git	git://github.com/anholt/linux.git#for-next
+<<<<<<< HEAD
 berlin		git	git://git.infradead.org/users/hesselba/linux-berlin.git#berlin/for-next
 cortex-m		git	git://git.pengutronix.de/git/ukl/linux.git#for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 imx-mxs		git	git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux.git#for-next
 keystone		git	git://git.kernel.org/pub/scm/linux/kernel/git/ssantosh/linux-keystone.git#next
 mvebu		git	git://git.infradead.org/linux-mvebu.git#for-next
 omap		git	git://git.kernel.org/pub/scm/linux/kernel/git/tmlind/linux-omap.git#for-next
+<<<<<<< HEAD
 omap-pending	git	git://git.kernel.org/pub/scm/linux/kernel/git/pjw/omap-pending.git#for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 reset		git	https://git.pengutronix.de/git/pza/linux#reset/next
 qcom		git	git://git.kernel.org/pub/scm/linux/kernel/git/agross/linux.git#for-next
 realtek		git	git://git.kernel.org/pub/scm/linux/kernel/git/afaerber/linux-realtek.git#for-next
 renesas		git	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#next
 rockchip		git	git://git.kernel.org/pub/scm/linux/kernel/git/mmind/linux-rockchip.git#for-next
+<<<<<<< HEAD
 rpi		git	git://git.kernel.org/pub/scm/linux/kernel/git/rpi/linux-rpi.git#for-rpi-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 samsung		git	git://git.kernel.org/pub/scm/linux/kernel/git/kgene/linux-samsung.git#for-next
 samsung-krzk	git	git://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux.git#for-next
 sunxi		git	git://git.kernel.org/pub/scm/linux/kernel/git/sunxi/linux.git#sunxi/for-next
@@ -80,9 +92,12 @@ clk		git	git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
 clk-samsung	git	git://git.kernel.org/pub/scm/linux/kernel/git/snawrocki/clk.git#for-next
 c6x		git	git://linux-c6x.org/git/projects/linux-c6x-upstreaming.git#for-linux-next
 cris		git	git://git.kernel.org/pub/scm/linux/kernel/git/jesper/cris.git#for-next
+<<<<<<< HEAD
 h8300		git	git://git.sourceforge.jp/gitroot/uclinux-h8/linux.git#h8300-next
 hexagon		git	git://git.kernel.org/pub/scm/linux/kernel/git/rkuo/linux-hexagon-kernel.git#linux-next
 ia64		git	git://git.kernel.org/pub/scm/linux/kernel/git/aegl/linux.git#next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 m68k		git	git://git.kernel.org/pub/scm/linux/kernel/git/geert/linux-m68k.git#for-next
 m68knommu	git	git://git.kernel.org/pub/scm/linux/kernel/git/gerg/m68knommu.git#for-next
 metag		git	git://git.kernel.org/pub/scm/linux/kernel/git/jhogan/metag.git#for-next
@@ -93,14 +108,20 @@ openrisc		git	git://github.com/openrisc/linux.git#for-next
 parisc-hd	git	git://git.kernel.org/pub/scm/linux/kernel/git/deller/parisc-linux.git#for-next
 powerpc		git	git://git.kernel.org/pub/scm/linux/kernel/git/powerpc/linux.git#next
 fsl		git	git://git.kernel.org/pub/scm/linux/kernel/git/scottwood/linux.git#next
+<<<<<<< HEAD
 mpc5xxx		git	git://git.denx.de/linux-denx-agust.git#next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 risc-v		git	git://git.kernel.org/pub/scm/linux/kernel/git/palmer/linux.git#for-linux-next
 s390		git	git://git.kernel.org/pub/scm/linux/kernel/git/s390/linux.git#features
 sparc-next	git	git://git.kernel.org/pub/scm/linux/kernel/git/davem/sparc-next.git#master
 sh		git	git://git.libc.org/linux-sh#for-next
 tile		git	git://git.kernel.org/pub/scm/linux/kernel/git/cmetcalf/linux-tile.git#master
 uml		git	git://git.kernel.org/pub/scm/linux/kernel/git/rw/uml.git#linux-next
+<<<<<<< HEAD
 unicore32	git	git://github.com/gxt/linux.git#unicore32
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 xtensa		git	git://github.com/jcmvbkbc/linux-xtensa.git#xtensa-for-next
 fscrypt		git	git://git.kernel.org/pub/scm/linux/kernel/git/tytso/fscrypt.git#master
 befs		git	git://git.kernel.org/pub/scm/linux/kernel/git/luisbg/linux-befs.git#for-next
@@ -113,15 +134,21 @@ ecryptfs		git	git://git.kernel.org/pub/scm/linux/kernel/git/tyhicks/ecryptfs.git
 ext3		git	git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git#for_next
 ext4		git	git://git.kernel.org/pub/scm/linux/kernel/git/tytso/ext4.git#dev
 f2fs		git	git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs.git#dev
+<<<<<<< HEAD
 freevxfs		git	git://git.infradead.org/users/hch/freevxfs.git#for-next
 fscache		git	git://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git#fscache
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 fuse		git	git://git.kernel.org/pub/scm/linux/kernel/git/mszeredi/fuse.git#for-next
 jfs		git	git://github.com/kleikamp/linux-shaggy.git#jfs-next
 nfs		git	git://git.linux-nfs.org/projects/trondmy/nfs-2.6.git#linux-next
 nfsd		git	git://git.linux-nfs.org/~bfields/linux.git#nfsd-next
 orangefs		git	git://git.kernel.org/pub/scm/linux/kernel/git/hubcap/linux#for-next
 overlayfs	git	git://git.kernel.org/pub/scm/linux/kernel/git/mszeredi/vfs.git#overlayfs-next
+<<<<<<< HEAD
 v9fs		git	git://git.kernel.org/pub/scm/linux/kernel/git/ericvh/v9fs.git#for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 ubifs		git	git://git.infradead.org/ubifs-2.6.git#linux-next
 xfs		git	git://git.kernel.org/pub/scm/fs/xfs/xfs-linux.git#for-next
 file-locks	git	git://git.kernel.org/pub/scm/linux/kernel/git/jlayton/linux.git#locks-next
@@ -132,7 +159,10 @@ pci		git	git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci.git#next
 pstore		git	git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git#for-next/pstore
 hid		git	git://git.kernel.org/pub/scm/linux/kernel/git/jikos/hid.git#for-next
 i2c		git	git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+<<<<<<< HEAD
 jdelvare-hwmon	quilt	http://jdelvare.nerim.net/devel/linux/jdelvare-hwmon/
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 dmi		quilt	http://jdelvare.nerim.net/devel/linux/jdelvare-dmi/
 hwmon-staging	git	git://git.kernel.org/pub/scm/linux/kernel/git/groeck/linux-staging.git#hwmon-next
 jc_docs		git	git://git.lwn.net/linux.git#docs-next
@@ -156,7 +186,11 @@ ipvs-next	git	git://git.kernel.org/pub/scm/linux/kernel/git/horms/ipvs-next.git#
 wireless-drivers-next	git	git://git.kernel.org/pub/scm/linux/kernel/git/kvalo/wireless-drivers-next.git#master
 bluetooth	git	git://git.kernel.org/pub/scm/linux/kernel/git/bluetooth/bluetooth-next.git#master
 mac80211-next	git	git://git.kernel.org/pub/scm/linux/kernel/git/jberg/mac80211-next.git#master
+<<<<<<< HEAD
 rdma		git	git://git.kernel.org/pub/scm/linux/kernel/git/dledford/rdma.git#for-next
+=======
+rdma		git	git://git.kernel.org/pub/scm/linux/kernel/git/rdma/rdma.git#for-next
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 gfs2		git	git://git.kernel.org/pub/scm/linux/kernel/git/gfs2/linux-gfs2.git#for-next
 mtd		git	git://git.infradead.org/mtd-2.6.git#master
 l2-mtd		git	git://git.infradead.org/l2-mtd.git#master
@@ -169,7 +203,10 @@ drm-panel	git	git://anongit.freedesktop.org/tegra/linux.git#drm/panel/for-next
 drm-intel	git	git://anongit.freedesktop.org/drm-intel#for-linux-next
 drm-tegra	git	git://anongit.freedesktop.org/tegra/linux.git#drm/tegra/for-next
 drm-misc		git	git://anongit.freedesktop.org/drm/drm-misc#for-linux-next
+<<<<<<< HEAD
 drm-exynos	git	git://git.kernel.org/pub/scm/linux/kernel/git/daeinki/drm-exynos.git#exynos-drm/for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 drm-msm		git	git://people.freedesktop.org/~robclark/linux#msm-next
 hdlcd		git	git://linux-arm.org/linux-ld#for-upstream/hdlcd
 mali-dp		git	git://linux-arm.org/linux-ld#for-upstream/mali-dp
@@ -185,14 +222,21 @@ input		git	git://git.kernel.org/pub/scm/linux/kernel/git/dtor/input.git#next
 block		git	git://git.kernel.dk/linux-block.git#for-next
 lightnvm		git	git://github.com/OpenChannelSSD/linux.git#for-next
 device-mapper	git	git://git.kernel.org/pub/scm/linux/kernel/git/device-mapper/linux-dm.git#for-next
+<<<<<<< HEAD
 pcmcia		git	git://git.kernel.org/pub/scm/linux/kernel/git/brodo/pcmcia.git#master
 mmc		git	git://git.kernel.org/pub/scm/linux/kernel/git/ulfh/mmc.git#next
 kgdb		git	git://git.kernel.org/pub/scm/linux/kernel/git/jwessel/kgdb.git#kgdb-next
+=======
+mmc		git	git://git.kernel.org/pub/scm/linux/kernel/git/ulfh/mmc.git#next
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 md		git	git://git.kernel.org/pub/scm/linux/kernel/git/shli/md.git#for-next
 mfd		git	git://git.kernel.org/pub/scm/linux/kernel/git/lee/mfd.git#for-mfd-next
 backlight	git	git://git.kernel.org/pub/scm/linux/kernel/git/lee/backlight.git#for-backlight-next
 battery		git	git://git.kernel.org/pub/scm/linux/kernel/git/sre/linux-power-supply.git#for-next
+<<<<<<< HEAD
 omap_dss2	git	git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 regulator	git	git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
 security		git	git://git.kernel.org/pub/scm/linux/kernel/git/jmorris/linux-security.git#next-testing
 integrity	git	git://git.kernel.org/pub/scm/linux/kernel/git/zohar/linux-integrity#next
@@ -244,23 +288,32 @@ cgroup		git	git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git#for-next
 scsi		git	git://git.kernel.org/pub/scm/linux/kernel/git/jejb/scsi.git#for-next
 scsi-mkp		git	git://git.kernel.org/pub/scm/linux/kernel/git/mkp/scsi.git#for-next
 target-updates	git	git://git.kernel.org/pub/scm/linux/kernel/git/nab/target-pending.git#for-next
+<<<<<<< HEAD
 target-merge	git	git://git.kernel.org/pub/scm/linux/kernel/git/nab/target-pending.git#for-next-merge
 target-bva	git	git://git.kernel.org/pub/scm/linux/kernel/git/bvanassche/linux.git#for-next
 libata		git	git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
 binfmt_misc	git	git://git.kernel.org/pub/scm/linux/kernel/git/jejb/binfmt_misc.git#for-next
+=======
+target-bva	git	git://git.kernel.org/pub/scm/linux/kernel/git/bvanassche/linux.git#for-next
+libata		git	git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 vhost		git	git://git.kernel.org/pub/scm/linux/kernel/git/mst/vhost.git#linux-next
 rpmsg		git	git://github.com/andersson/remoteproc.git#for-next
 gpio		git	git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
 pinctrl		git	git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
 pinctrl-samsung	git	git://git.kernel.org/pub/scm/linux/kernel/git/pinctrl/samsung.git#for-next
 pwm		git	git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+<<<<<<< HEAD
 dma-buf		git	git://git.linaro.org/people/sumitsemwal/linux-dma-buf.git#for-next
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 userns		git	git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git#for-next
 ktest		git	git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-ktest.git#for-next
 random		git	git://git.kernel.org/pub/scm/linux/kernel/git/tytso/random.git#dev
 aio		git	git://git.kvack.org/~bcrl/aio-next.git#master
 kselftest	git	git://git.kernel.org/pub/scm/linux/kernel/git/shuah/linux-kselftest.git#next
 y2038		git	git://git.kernel.org/pub/scm/linux/kernel/git/arnd/playground.git#y2038
+<<<<<<< HEAD
 luto-misc	git	git://git.kernel.org/pub/scm/linux/kernel/git/luto/linux.git#next
 borntraeger	git	git://git.kernel.org/pub/scm/linux/kernel/git/borntraeger/linux.git#linux-next
 livepatching	git	git://git.kernel.org/pub/scm/linux/kernel/git/jikos/livepatching#for-next
@@ -269,6 +322,12 @@ rtc		git	git://git.kernel.org/pub/scm/linux/kernel/git/abelloni/linux.git#rtc-ne
 hwspinlock	git	git://git.kernel.org/pub/scm/linux/kernel/git/ohad/hwspinlock.git#for-next
 nvdimm		git	git://git.kernel.org/pub/scm/linux/kernel/git/nvdimm/nvdimm.git#libnvdimm-for-next
 dax-misc		git	git://git.kernel.org/cgit/linux/kernel/git/nvdimm/nvdimm.git#dax-misc
+=======
+livepatching	git	git://git.kernel.org/pub/scm/linux/kernel/git/jikos/livepatching#for-next
+coresight	git	git://git.linaro.org/kernel/coresight.git#next
+rtc		git	git://git.kernel.org/pub/scm/linux/kernel/git/abelloni/linux.git#rtc-next
+nvdimm		git	git://git.kernel.org/pub/scm/linux/kernel/git/nvdimm/nvdimm.git#libnvdimm-for-next
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 idr		git	git://git.infradead.org/users/willy/linux-dax.git#idr-4.11
 kspp		git	git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git#for-next/kspp
 akpm-current	mmotm	http://www.ozlabs.org/~akpm/mmotm/

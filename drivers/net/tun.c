@@ -1485,6 +1485,7 @@ static struct sk_buff *tun_build_skb(struct tun_struct *tun,
 			err = xdp_do_redirect(tun->dev, &xdp, xdp_prog);
 			if (err)
 				goto err_redirect;
+			rcu_read_unlock();
 			return NULL;
 		case XDP_TX:
 			xdp_xmit = true;
@@ -1517,7 +1518,7 @@ static struct sk_buff *tun_build_skb(struct tun_struct *tun,
 	if (xdp_xmit) {
 		skb->dev = tun->dev;
 		generic_xdp_tx(skb, xdp_prog);
-		rcu_read_lock();
+		rcu_read_unlock();
 		return NULL;
 	}
 
@@ -2369,6 +2370,8 @@ static int set_offload(struct tun_struct *tun, unsigned long arg)
 				features |= NETIF_F_TSO6;
 			arg &= ~(TUN_F_TSO4|TUN_F_TSO6);
 		}
+
+		arg &= ~TUN_F_UFO;
 	}
 
 	/* This gives the user a way to test for new features in future by

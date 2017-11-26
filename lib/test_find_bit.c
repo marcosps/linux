@@ -51,7 +51,12 @@ static int __init test_find_first_bit(void *bitmap, unsigned long len)
 		__clear_bit(i, bitmap);
 	}
 	cycles = get_cycles() - cycles;
+<<<<<<< HEAD
 	pr_err("find_first_bit:\t\t%ld cycles,\t%ld iterations\n", cycles, cnt);
+=======
+	pr_err("find_first_bit:\t\t%llu cycles,\t%ld iterations\n",
+	       (u64)cycles, cnt);
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 
 	return 0;
 }
@@ -65,7 +70,12 @@ static int __init test_find_next_bit(const void *bitmap, unsigned long len)
 	for (cnt = i = 0; i < BITMAP_LEN; cnt++)
 		i = find_next_bit(bitmap, BITMAP_LEN, i) + 1;
 	cycles = get_cycles() - cycles;
+<<<<<<< HEAD
 	pr_err("find_next_bit:\t\t%ld cycles,\t%ld iterations\n", cycles, cnt);
+=======
+	pr_err("find_next_bit:\t\t%llu cycles,\t%ld iterations\n",
+	       (u64)cycles, cnt);
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 
 	return 0;
 }
@@ -79,8 +89,13 @@ static int __init test_find_next_zero_bit(const void *bitmap, unsigned long len)
 	for (cnt = i = 0; i < BITMAP_LEN; cnt++)
 		i = find_next_zero_bit(bitmap, len, i) + 1;
 	cycles = get_cycles() - cycles;
+<<<<<<< HEAD
 	pr_err("find_next_zero_bit:\t%ld cycles,\t%ld iterations\n",
 								cycles, cnt);
+=======
+	pr_err("find_next_zero_bit:\t%llu cycles,\t%ld iterations\n",
+	       (u64)cycles, cnt);
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 
 	return 0;
 }
@@ -99,7 +114,12 @@ static int __init test_find_last_bit(const void *bitmap, unsigned long len)
 		len = l;
 	} while (len);
 	cycles = get_cycles() - cycles;
+<<<<<<< HEAD
 	pr_err("find_last_bit:\t\t%ld cycles,\t%ld iterations\n", cycles, cnt);
+=======
+	pr_err("find_last_bit:\t\t%llu cycles,\t%ld iterations\n",
+	       (u64)cycles, cnt);
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 
 	return 0;
 }

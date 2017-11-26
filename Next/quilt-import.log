@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 Importing jdelvare-hwmon based on 08d27eb2066622cd659b91d877d0406ebd651225
 Unchanged quilt series jdelvare-hwmon
+=======
+>>>>>>> 6fc478f80f6809cc4b1a4230f47a62d3b7378dc0
 Importing dmi based on 4.14-rc5
 Unchanged quilt series dmi
