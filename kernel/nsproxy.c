@@ -151,17 +151,6 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
 	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
 		return -EPERM;
 
-	/*
-	 * CLONE_NEWIPC must detach from the undolist: after switching
-	 * to a new ipc namespace, the semaphore arrays from the old
-	 * namespace are unreachable.  In clone parlance, CLONE_SYSVSEM
-	 * means share undolist with parent, so we must forbid using
-	 * it along with CLONE_NEWIPC.
-	 */
-	if ((flags & (CLONE_NEWIPC | CLONE_SYSVSEM)) ==
-		(CLONE_NEWIPC | CLONE_SYSVSEM)) 
-		return -EINVAL;
-
 	new_ns = create_new_namespaces(flags, tsk, user_ns, tsk->fs);
 	if (IS_ERR(new_ns))
 		return  PTR_ERR(new_ns);

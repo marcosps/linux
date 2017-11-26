@@ -1600,6 +1600,17 @@ static __latent_entropy struct task_struct *copy_process(
 		return ERR_PTR(-EINVAL);
 
 	/*
+	 * CLONE_NEWIPC must detach from the undolist: after switching
+	 * to a new ipc namespace, the semaphore arrays from the old
+	 * namespace are unreachable.  In clone parlance, CLONE_SYSVSEM
+	 * means share undolist with parent, so we must forbid using
+	 * it along with CLONE_NEWIPC.
+	 */
+	if ((clone_flags & (CLONE_NEWIPC | CLONE_SYSVSEM)) ==
+		(CLONE_NEWIPC | CLONE_SYSVSEM))
+		return ERR_PTR(-EINVAL);
+
+	/*
 	 * Thread groups must share signals as well, and detached threads
 	 * can only be started up within the thread group.
 	 */
