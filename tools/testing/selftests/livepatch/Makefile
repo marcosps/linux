@@ -9,7 +9,8 @@ TEST_PROGS := \
 	test-shadow-vars.sh \
 	test-state.sh \
 	test-ftrace.sh \
-	test-syscall.sh
+	test-syscall.sh \
+	test-multi-fast-lps.sh
 
 TEST_FILES := settings
 

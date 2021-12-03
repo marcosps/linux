@@ -12,4 +12,5 @@ obj-$(CONFIG_TEST_LIVEPATCH) += test_klp_atomic_replace.o \
 				test_klp_state.o \
 				test_klp_state2.o \
 				test_klp_state3.o \
-				test_klp_syscall.o
+				test_klp_syscall.o \
+				test_klp_syscallXX.o

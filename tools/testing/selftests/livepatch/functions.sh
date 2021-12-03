@@ -136,8 +136,12 @@ function __load_mod() {
 		die "$ret"
 	fi
 
+	# For some tests, the module name is different from the module filename,
+	# so get the correct name by looking at modinfo.
+	mod_name=$(modinfo "$mod" | awk '/^name:/ { print $2 }')
+
 	# Wait for module in sysfs ...
-	loop_until '[[ -e "/sys/module/$mod" ]]' ||
+	loop_until '[[ -e "/sys/module/$mod_name" ]]' ||
 		die "failed to load module $mod"
 }
 
@@ -172,8 +176,12 @@ function load_lp_nowait() {
 
 	__load_mod "$mod" "$@"
 
+	# For some tests, the module name is different from the module filename,
+	# so get the correct name by looking at modinfo.
+	mod_name=$(modinfo "$mod" | awk '/^name:/ { print $2 }')
+
 	# Wait for livepatch in sysfs ...
-	loop_until '[[ -e "/sys/kernel/livepatch/$mod" ]]' ||
+	loop_until '[[ -e "/sys/kernel/livepatch/$mod_name" ]]' ||
 		die "failed to load module $mod (sysfs)"
 }
 
@@ -185,8 +193,12 @@ function load_lp() {
 
 	load_lp_nowait "$mod" "$@"
 
+	# For some tests, the module name is different from the module filename,
+	# so get the correct name by looking at modinfo.
+	mod_name=$(modinfo "$mod" | awk '/^name:/ { print $2 }')
+
 	# Wait until the transition finishes ...
-	loop_until 'grep -q '^0$' /sys/kernel/livepatch/$mod/transition' ||
+	loop_until "grep -q '^0$' /sys/kernel/livepatch/$mod_name/transition" ||
 		die "failed to complete transition"
 }
 
