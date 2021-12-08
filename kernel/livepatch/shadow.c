@@ -101,6 +101,41 @@ void *klp_shadow_get(void *obj, unsigned long id)
 }
 EXPORT_SYMBOL_GPL(klp_shadow_get);
 
+static void *__klp_shadow_get_or_use(void *obj, unsigned long id,
+				     struct klp_shadow *new_shadow,
+				     klp_shadow_ctor_t ctor, void *ctor_data,
+				     bool *exist)
+{
+	void *shadow_data;
+
+	shadow_data = klp_shadow_get(obj, id);
+	if (unlikely(shadow_data)) {
+		*exist = true;
+		return shadow_data;
+	}
+	*exist = false;
+
+	new_shadow->obj = obj;
+	new_shadow->id = id;
+
+	if (ctor) {
+		int err;
+
+		err = ctor(obj, new_shadow->data, ctor_data);
+		if (err) {
+			pr_err("Failed to construct shadow variable <%p, %lx> (%d)\n",
+			       obj, id, err);
+			return NULL;
+		}
+	}
+
+	/* No <obj, id> found, so attach the newly allocated one */
+	hash_add_rcu(klp_shadow_hash, &new_shadow->node,
+		     (unsigned long)new_shadow->obj);
+
+	return new_shadow->data;
+}
+
 static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 				       size_t size, gfp_t gfp_flags,
 				       klp_shadow_ctor_t ctor, void *ctor_data,
@@ -108,12 +143,13 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 {
 	struct klp_shadow *new_shadow;
 	void *shadow_data;
+	bool exist;
 	unsigned long flags;
 
 	/* Check if the shadow variable already exists */
 	shadow_data = klp_shadow_get(obj, id);
 	if (shadow_data)
-		goto exists;
+		return shadow_data;
 
 	/*
 	 * Allocate a new shadow variable.  Fill it with zeroes by default.
@@ -126,42 +162,15 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 
 	/* Look for <obj, id> again under the lock */
 	spin_lock_irqsave(&klp_shadow_lock, flags);
-	shadow_data = klp_shadow_get(obj, id);
-	if (unlikely(shadow_data)) {
-		/*
-		 * Shadow variable was found, throw away speculative
-		 * allocation.
-		 */
-		spin_unlock_irqrestore(&klp_shadow_lock, flags);
-		kfree(new_shadow);
-		goto exists;
-	}
-
-	new_shadow->obj = obj;
-	new_shadow->id = id;
-
-	if (ctor) {
-		int err;
-
-		err = ctor(obj, new_shadow->data, ctor_data);
-		if (err) {
-			spin_unlock_irqrestore(&klp_shadow_lock, flags);
-			kfree(new_shadow);
-			pr_err("Failed to construct shadow variable <%p, %lx> (%d)\n",
-			       obj, id, err);
-			return NULL;
-		}
-	}
-
-	/* No <obj, id> found, so attach the newly allocated one */
-	hash_add_rcu(klp_shadow_hash, &new_shadow->node,
-		     (unsigned long)new_shadow->obj);
+	shadow_data = __klp_shadow_get_or_use(obj, id, new_shadow,
+					      ctor, ctor_data, &exist);
 	spin_unlock_irqrestore(&klp_shadow_lock, flags);
 
-	return new_shadow->data;
+	/* Throw away unused speculative allocation. */
+	if (!shadow_data || exist)
+		kfree(new_shadow);
 
-exists:
-	if (warn_on_exist) {
+	if (exist && warn_on_exist) {
 		WARN(1, "Duplicate shadow variable <%p, %lx>\n", obj, id);
 		return NULL;
 	}
