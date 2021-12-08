@@ -280,6 +280,20 @@ void klp_shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor)
 }
 EXPORT_SYMBOL_GPL(klp_shadow_free);
 
+static void __klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
+{
+	struct klp_shadow *shadow;
+	int i;
+
+	lockdep_assert_held(&klp_shadow_lock);
+
+	/* Delete all <*, id> from hash */
+	hash_for_each(klp_shadow_hash, i, shadow, node) {
+		if (klp_shadow_match(shadow, shadow->obj, id))
+			klp_shadow_free_struct(shadow, dtor);
+	}
+}
+
 /**
  * klp_shadow_free_all() - detach and free all <_, id> shadow variables
  * @id:		data identifier
@@ -291,18 +305,10 @@ EXPORT_SYMBOL_GPL(klp_shadow_free);
  */
 void klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
 {
-	struct klp_shadow *shadow;
 	unsigned long flags;
-	int i;
 
 	spin_lock_irqsave(&klp_shadow_lock, flags);
-
-	/* Delete all <_, id> from hash */
-	hash_for_each(klp_shadow_hash, i, shadow, node) {
-		if (klp_shadow_match(shadow, shadow->obj, id))
-			klp_shadow_free_struct(shadow, dtor);
-	}
-
+	__klp_shadow_free_all(id, dtor);
 	spin_unlock_irqrestore(&klp_shadow_lock, flags);
 }
 EXPORT_SYMBOL_GPL(klp_shadow_free_all);
