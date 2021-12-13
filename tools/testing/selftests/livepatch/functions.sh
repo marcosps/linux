@@ -7,6 +7,9 @@
 MAX_RETRIES=600
 RETRY_INTERVAL=".1"	# seconds
 
+KDIR="../../../../"
+LP_DIR="$KDIR/lib/livepatch/"
+
 # Kselftest framework requirement - SKIP code is 4
 ksft_skip=4
 
@@ -113,7 +116,11 @@ function loop_until() {
 function assert_mod() {
 	local mod="$1"
 
-	modprobe --dry-run "$mod" &>/dev/null
+	if [[ "$mod" == *".ko"* ]]; then
+		modinfo "$mod" &>/dev/null
+	else
+		modprobe --dry-run "$mod" &>/dev/null
+	fi
 }
 
 function is_livepatch_mod() {
@@ -129,15 +136,24 @@ function is_livepatch_mod() {
 function __load_mod() {
 	local mod="$1"; shift
 
-	local msg="% modprobe $mod $*"
+	# If the mod is inside a directory, it means that we are dealing with
+	# generated module, so use insmod instead of modprobe
+	load_prog="modprobe"
+	if [[ "$mod" == *".ko"* ]]; then
+		load_prog="insmod"
+	fi
+
+	local msg="% $load_prog $mod $*"
 	log "${msg%% }"
-	ret=$(modprobe "$mod" "$@" 2>&1)
+	ret=$($load_prog "$mod" "$@" 2>&1)
 	if [[ "$ret" != "" ]]; then
 		die "$ret"
 	fi
 
+	mod_name="$(basename $mod .ko)"
+
 	# Wait for module in sysfs ...
-	loop_until '[[ -e "/sys/module/$mod" ]]' ||
+	loop_until '[[ -e "/sys/module/$mod_name" ]]' ||
 		die "failed to load module $mod"
 }
 
@@ -172,9 +188,11 @@ function load_lp_nowait() {
 
 	__load_mod "$mod" "$@"
 
+	mod_name="$(basename $mod .ko)"
+
 	# Wait for livepatch in sysfs ...
-	loop_until '[[ -e "/sys/kernel/livepatch/$mod" ]]' ||
-		die "failed to load module $mod (sysfs)"
+	loop_until '[[ -e "/sys/kernel/livepatch/$mod_name" ]]' ||
+		die "failed to load module $mod_name (sysfs)"
 }
 
 # load_lp(modname, params) - load a kernel module with a livepatch
@@ -185,8 +203,10 @@ function load_lp() {
 
 	load_lp_nowait "$mod" "$@"
 
+	mod_name="$(basename $mod .ko)"
+
 	# Wait until the transition finishes ...
-	loop_until 'grep -q '^0$' /sys/kernel/livepatch/$mod/transition' ||
+	loop_until 'grep -q '^0$' /sys/kernel/livepatch/$mod_name/transition' ||
 		die "failed to complete transition"
 }
 
@@ -210,8 +230,10 @@ function load_failing_mod() {
 function unload_mod() {
 	local mod="$1"
 
+	mod_name="$(basename $mod .ko)"
+
 	# Wait for module reference count to clear ...
-	loop_until '[[ $(cat "/sys/module/$mod/refcnt") == "0" ]]' ||
+	loop_until '[[ $(cat "/sys/module/$mod_name/refcnt") == "0" ]]' ||
 		die "failed to unload module $mod (refcnt)"
 
 	log "% rmmod $mod"
@@ -221,7 +243,7 @@ function unload_mod() {
 	fi
 
 	# Wait for module in sysfs ...
-	loop_until '[[ ! -e "/sys/module/$mod" ]]' ||
+	loop_until '[[ ! -e "/sys/module/$mod_name" ]]' ||
 		die "failed to unload module $mod (/sys/module)"
 }
 
@@ -236,13 +258,15 @@ function unload_lp() {
 function disable_lp() {
 	local mod="$1"
 
-	log "% echo 0 > /sys/kernel/livepatch/$mod/enabled"
-	echo 0 > /sys/kernel/livepatch/"$mod"/enabled
+	mod_name=$(basename $mod)
+
+	log "% echo 0 > /sys/kernel/livepatch/$mod_name/enabled"
+	echo 0 > /sys/kernel/livepatch/"$mod_name"/enabled
 
 	# Wait until the transition finishes and the livepatch gets
 	# removed from sysfs...
-	loop_until '[[ ! -e "/sys/kernel/livepatch/$mod" ]]' ||
-		die "failed to disable livepatch $mod"
+	loop_until '[[ ! -e "/sys/kernel/livepatch/$mod_name" ]]' ||
+		die "failed to disable livepatch $mod_name"
 }
 
 # set_pre_patch_ret(modname, pre_patch_ret)
@@ -291,4 +315,36 @@ function check_result {
 	fi
 
 	cleanup_dmesg_file
+}
+
+# compile_livepatch() - generate a livepatch kernel module based on a template
+#	srcname - the name of the source file
+#	newname - Name of the module copied from the template
+function compile_livepatch {
+	local srcname="$1"
+	local newname="$2"
+	local output_dir=$(mktemp -d $newname.XXXXXX)
+
+	cp $LP_DIR/$srcname $output_dir/${newname}.c
+
+	echo "obj-m += ${newname}.o" >"$output_dir/Makefile"
+
+	make -C $KDIR M="$(realpath $output_dir)" modules >/dev/null 2>&1
+
+	echo "$output_dir/$newname.ko"
+}
+
+function load_template_module {
+	local mod_name="$1"
+	local template="test_klp_template.c"
+	local mod_dir=""
+	local mod_file=""
+
+	mod_file=$(compile_livepatch $template $mod_name)
+	mod_dir=$(dirname $mod_file)
+
+	cd $mod_dir
+	load_lp "$mod_name.ko"
+	cd ..
+	rm -rf $mod_dir
 }
