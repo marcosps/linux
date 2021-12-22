@@ -113,13 +113,13 @@ function loop_until() {
 function assert_mod() {
 	local mod="$1"
 
-	modprobe --dry-run "$mod" &>/dev/null
+	modinfo mods/$mod.ko >/dev/null 2>&1
 }
 
 function is_livepatch_mod() {
 	local mod="$1"
 
-	if [[ $(modinfo "$mod" | awk '/^livepatch:/{print $NF}') == "Y" ]]; then
+	if [[ $(modinfo "mods/$mod.ko" | awk '/^livepatch:/{print $NF}') == "Y" ]]; then
 		return 0
 	fi
 
@@ -129,9 +129,9 @@ function is_livepatch_mod() {
 function __load_mod() {
 	local mod="$1"; shift
 
-	local msg="% modprobe $mod $*"
+	local msg="% insmod mods/$mod.ko $*"
 	log "${msg%% }"
-	ret=$(modprobe "$mod" "$@" 2>&1)
+	ret=$(insmod "mods/$mod.ko" "$@" 2>&1)
 	if [[ "$ret" != "" ]]; then
 		die "$ret"
 	fi
@@ -144,9 +144,11 @@ function __load_mod() {
 
 # load_mod(modname, params) - load a kernel module
 #	modname - module name to load
-#	params  - module parameters to pass to modprobe
+#	params  - module parameters to pass to insmod
 function load_mod() {
 	local mod="$1"; shift
+
+	prepare_mod "$mod"
 
 	assert_mod "$mod" ||
 		skip "unable to load module ${mod}, verify CONFIG_TEST_LIVEPATCH=m and run self-tests as root"
@@ -160,7 +162,7 @@ function load_mod() {
 # load_lp_nowait(modname, params) - load a kernel module with a livepatch
 #			but do not wait on until the transition finishes
 #	modname - module name to load
-#	params  - module parameters to pass to modprobe
+#	params  - module parameters to pass to insmod
 function load_lp_nowait() {
 	local mod="$1"; shift
 
@@ -179,9 +181,11 @@ function load_lp_nowait() {
 
 # load_lp(modname, params) - load a kernel module with a livepatch
 #	modname - module name to load
-#	params  - module parameters to pass to modprobe
+#	params  - module parameters to pass to insmod
 function load_lp() {
 	local mod="$1"; shift
+
+	prepare_mod "$mod"
 
 	load_lp_nowait "$mod" "$@"
 
@@ -192,13 +196,13 @@ function load_lp() {
 
 # load_failing_mod(modname, params) - load a kernel module, expect to fail
 #	modname - module name to load
-#	params  - module parameters to pass to modprobe
+#	params  - module parameters to pass to insmod
 function load_failing_mod() {
 	local mod="$1"; shift
 
-	local msg="% modprobe $mod $*"
+	local msg="% insmod mods/$mod.ko $*"
 	log "${msg%% }"
-	ret=$(modprobe "$mod" "$@" 2>&1)
+	ret=$(insmod "mods/$mod.ko" "$@" 2>&1)
 	if [[ "$ret" == "" ]]; then
 		die "$mod unexpectedly loaded"
 	fi
@@ -291,4 +295,14 @@ function check_result {
 	fi
 
 	cleanup_dmesg_file
+}
+
+# prepare_mod() - compile the needed modules for the tests
+#	modname - name of the module to be compiled
+function prepare_mod {
+	local mod="$1"
+
+	echo "obj-m += $mod.o" >mods/Makefile
+	make -C ../../../../ M=$(pwd)/mods modules >/dev/null
+	rm mods/Makefile mods/modules.order mods/Module.symvers
 }
