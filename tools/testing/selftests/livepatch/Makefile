@@ -4,7 +4,8 @@ TEST_FILES := settings \
 		test_modules
 
 # We need the test_modules dir in order to make gen_tar and install to work
-TEST_GEN_PROGS_EXTENDED := test_modules/test_klp_atomic_replace.ko \
+TEST_GEN_PROGS_EXTENDED := test_programs/test_klp-call_getpid \
+			test_modules/test_klp_atomic_replace.ko \
 			test_modules/test_klp_callbacks_busy.ko \
 			test_modules/test_klp_callbacks_demo.ko \
 			test_modules/test_klp_callbacks_demo2.ko \
@@ -13,7 +14,8 @@ TEST_GEN_PROGS_EXTENDED := test_modules/test_klp_atomic_replace.ko \
 			test_modules/test_klp_state.ko \
 			test_modules/test_klp_state2.ko \
 			test_modules/test_klp_state3.ko \
-			test_modules/test_klp_shadow_vars.ko
+			test_modules/test_klp_shadow_vars.ko \
+			test_modules/test_klp_syscall.ko
 
 TEST_PROGS_EXTENDED := functions.sh
 TEST_PROGS := \
@@ -22,7 +24,8 @@ TEST_PROGS := \
 	test-shadow-vars.sh \
 	test-state.sh \
 	test-ftrace.sh \
-	test-sysfs.sh
+	test-sysfs.sh \
+	test-syscall.sh
 
 # override lib.mk's default rules
 OVERRIDE_TARGETS := 1
