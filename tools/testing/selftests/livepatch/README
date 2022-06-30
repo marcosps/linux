@@ -13,10 +13,7 @@ the message buffer for only the duration of each individual test.)
 Config
 ------
 
-Set these config options and their prerequisites:
-
-CONFIG_LIVEPATCH=y
-CONFIG_TEST_LIVEPATCH=m
+Set CONFIG_LIVEPATCH=y option and it's prerequisite.
 
 
 Running the tests
