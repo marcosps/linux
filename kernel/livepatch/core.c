@@ -910,6 +910,30 @@ static int klp_init_patch(struct klp_patch *patch)
 	return 0;
 }
 
+void klp_unregister_shadow_types(struct klp_object *obj)
+{
+	struct klp_shadow_type *shadow_type;
+	int i;
+
+	klp_for_each_shadow_type(obj, shadow_type, i) {
+		klp_shadow_unregister(shadow_type);
+	}
+}
+
+static int klp_register_shadow_types(struct klp_object *obj)
+{
+	struct klp_shadow_type *shadow_type;
+	int i, ret;
+
+	klp_for_each_shadow_type(obj, shadow_type, i) {
+		ret = klp_shadow_register(shadow_type);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int __klp_disable_patch(struct klp_patch *patch)
 {
 	struct klp_object *obj;
@@ -969,6 +993,13 @@ static int __klp_enable_patch(struct klp_patch *patch)
 	klp_for_each_object(patch, obj) {
 		if (!klp_is_object_loaded(obj))
 			continue;
+
+		ret = klp_register_shadow_types(obj);
+		if (ret) {
+			pr_warn("failed to register shadow types for object '%s'\n",
+				klp_is_module(obj) ? obj->name : "vmlinux");
+			goto err;
+		}
 
 		ret = klp_pre_patch_callback(obj);
 		if (ret) {
@@ -1154,6 +1185,7 @@ static void klp_cleanup_module_patches_limited(struct module *mod,
 			klp_unpatch_object(obj);
 
 			klp_post_unpatch_callback(obj);
+			klp_unregister_shadow_types(obj);
 
 			klp_free_object_loaded(obj);
 			break;
@@ -1199,6 +1231,13 @@ int klp_module_coming(struct module *mod)
 
 			pr_notice("applying patch '%s' to loading module '%s'\n",
 				  patch->mod->name, obj->mod->name);
+
+			ret = klp_register_shadow_types(obj);
+			if (ret) {
+				pr_warn("failed to register shadow types for object '%s'\n",
+					obj->name);
+				goto err;
+			}
 
 			ret = klp_pre_patch_callback(obj);
 			if (ret) {

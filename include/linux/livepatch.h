@@ -100,11 +100,14 @@ struct klp_callbacks {
 	bool post_unpatch_enabled;
 };
 
+struct klp_shadow_type;
+
 /**
  * struct klp_object - kernel object structure for live patching
  * @name:	module name (or NULL for vmlinux)
  * @funcs:	function entries for functions to be patched in the object
  * @callbacks:	functions to be executed pre/post (un)patching
+ * @shadow_types: shadow variable types used by the livepatch for the klp_object
  * @kobj:	kobject for sysfs resources
  * @func_list:	dynamic list of the function entries
  * @node:	list node for klp_patch obj_list
@@ -118,6 +121,7 @@ struct klp_object {
 	const char *name;
 	struct klp_func *funcs;
 	struct klp_callbacks callbacks;
+	struct klp_shadow_type **shadow_types;
 
 	/* internal */
 	struct kobject kobj;
@@ -222,12 +226,29 @@ typedef void (*klp_shadow_dtor_t)(void *obj, void *shadow_data);
  * @ctor:	custom constructor to initialize the shadow data (optional)
  * @dtor:	custom callback that can be used to unregister the variable
  *		and/or free data that the shadow variable points to (optional)
+ * @registered: flag indicating if the variable was successfully registered
+ *
+ * All shadow variables used by the livepatch for the related klp_object
+ * must be listed here so that they are registered when the livepatch
+ * and the module is loaded. Otherwise, it will not be possible to
+ * allocated them.
  */
 struct klp_shadow_type {
 	unsigned long id;
 	klp_shadow_ctor_t ctor;
 	klp_shadow_dtor_t dtor;
+
+	/* internal */
+	bool registered;
 };
+
+#define klp_for_each_shadow_type(obj, shadow_type, i)			\
+	for (shadow_type = obj->shadow_types ? obj->shadow_types[0] : NULL, i = 1; \
+	     shadow_type; \
+	     shadow_type = obj->shadow_types[i++])
+
+int klp_shadow_register(struct klp_shadow_type *shadow_type);
+void klp_shadow_unregister(struct klp_shadow_type *shadow_type);
 
 void *klp_shadow_get(void *obj, struct klp_shadow_type *shadow_type);
 void *klp_shadow_alloc(void *obj, struct klp_shadow_type *shadow_type,

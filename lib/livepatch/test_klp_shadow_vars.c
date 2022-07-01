@@ -188,6 +188,17 @@ static int test_klp_shadow_vars_init(void)
 	int ret;
 	int i;
 
+	/* Registered manually since we don't have a klp_object instance. */
+	ret = klp_shadow_register(&shadow_type_1);
+	if (ret)
+		return ret;
+
+	ret = klp_shadow_register(&shadow_type_2);
+	if (ret) {
+		klp_shadow_unregister(&shadow_type_1);
+		return ret;
+	}
+
 	ptr_id(NULL);
 
 	/*
@@ -296,12 +307,9 @@ static int test_klp_shadow_vars_init(void)
 			pr_info("  got expected NULL result\n");
 	}
 
-	free_ptr_list();
-
-	return 0;
 out:
-	shadow_free_all(&shadow_type_1); /* 'char' pairs */
-	shadow_free_all(&shadow_type_2); /* 'int' pairs */
+	klp_shadow_unregister(&shadow_type_1); /* 'char' pairs */
+	klp_shadow_unregister(&shadow_type_2); /* 'int' pairs */
 	free_ptr_list();
 
 	return ret;

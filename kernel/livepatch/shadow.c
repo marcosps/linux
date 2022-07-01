@@ -34,6 +34,7 @@
 #include <linux/hashtable.h>
 #include <linux/slab.h>
 #include <linux/livepatch.h>
+#include "core.h"
 
 static DEFINE_HASHTABLE(klp_shadow_hash, 12);
 
@@ -60,6 +61,22 @@ struct klp_shadow {
 };
 
 /**
+ * struct klp_shadow_type_reg - information about a registered shadow
+ *	variable type
+ * @id:		shadow variable type indentifier
+ * @count:	reference counter
+ * @list:	list node for list of registered shadow variable types
+ */
+struct klp_shadow_type_reg {
+	unsigned long id;
+	int ref_cnt;
+	struct list_head list;
+};
+
+/* List of registered shadow variable types */
+static LIST_HEAD(klp_shadow_types);
+
+/**
  * klp_shadow_match() - verify a shadow variable matches given <obj, id>
  * @shadow:	shadow variable to match
  * @obj:	pointer to parent object
@@ -83,6 +100,13 @@ static inline bool klp_shadow_match(struct klp_shadow *shadow, void *obj,
 void *klp_shadow_get(void *obj, struct klp_shadow_type *shadow_type)
 {
 	struct klp_shadow *shadow;
+
+	/* Just the best effort. Can't take @klp_shadow_lock here. */
+	if (!shadow_type->registered) {
+		pr_err("Trying to get shadow variable of non-registered type: %lu\n",
+		       shadow_type->id);
+		return NULL;
+	}
 
 	rcu_read_lock();
 
@@ -307,3 +331,103 @@ void klp_shadow_free_all(struct klp_shadow_type *shadow_type)
 	spin_unlock_irqrestore(&klp_shadow_lock, flags);
 }
 EXPORT_SYMBOL_GPL(klp_shadow_free_all);
+
+static struct klp_shadow_type_reg *
+klp_shadow_type_get_reg(struct klp_shadow_type *shadow_type)
+{
+	struct klp_shadow_type_reg *shadow_type_reg;
+	lockdep_assert_held(&klp_shadow_lock);
+
+	list_for_each_entry(shadow_type_reg, &klp_shadow_types, list) {
+		if (shadow_type_reg->id == shadow_type->id)
+			return shadow_type_reg;
+	}
+
+	return NULL;
+}
+
+/**
+ * klp_shadow_register() - register self for using a given data identifier
+ * @shadow_type:	shadow type to be registered
+ *
+ * Tell the system that the related module (livepatch) is going to use a given
+ * shadow variable ID. It allows to check and maintain lifetime of shadow
+ * variables.
+ *
+ * Return: 0 on suceess, -ENOMEM when there is not enough memory.
+ */
+int klp_shadow_register(struct klp_shadow_type *shadow_type)
+{
+	struct klp_shadow_type_reg *shadow_type_reg;
+	struct klp_shadow_type_reg *new_shadow_type_reg;
+
+	new_shadow_type_reg =
+		kzalloc(sizeof(struct klp_shadow_type_reg), GFP_KERNEL);
+	if (!new_shadow_type_reg)
+		return -ENOMEM;
+
+	spin_lock_irq(&klp_shadow_lock);
+
+	if (shadow_type->registered) {
+		pr_err("Trying to register shadow variable type that is already registered: %lu",
+		       shadow_type->id);
+		kfree(new_shadow_type_reg);
+		goto out;
+	}
+
+	shadow_type_reg = klp_shadow_type_get_reg(shadow_type);
+	if (!shadow_type_reg) {
+		shadow_type_reg = new_shadow_type_reg;
+		shadow_type_reg->id = shadow_type->id;
+		list_add(&shadow_type_reg->list, &klp_shadow_types);
+	} else {
+		kfree(new_shadow_type_reg);
+	}
+
+	shadow_type_reg->ref_cnt++;
+	shadow_type->registered = true;
+out:
+	spin_unlock_irq(&klp_shadow_lock);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(klp_shadow_register);
+
+/**
+ * klp_shadow_unregister() - unregister the give shadow variable type
+ * @shadow_type:	shadow type to be unregistered
+ *
+ * Tell the system that a given shadow variable ID is not longer be used by
+ * the caller (livepatch module). All existing shadow variables are freed
+ * when it was the last registered user.
+ */
+void klp_shadow_unregister(struct klp_shadow_type *shadow_type)
+{
+	struct klp_shadow_type_reg *shadow_type_reg;
+
+	spin_lock_irq(&klp_shadow_lock);
+
+	if (!shadow_type->registered) {
+		pr_err("Trying to unregister shadow variable type that is not registered: %lu",
+		       shadow_type->id);
+		goto out;
+	}
+
+	shadow_type_reg = klp_shadow_type_get_reg(shadow_type);
+	if (!shadow_type_reg) {
+		pr_err("Can't find shadow variable type registration: %lu", shadow_type->id);
+		goto out;
+	}
+
+	shadow_type->registered = false;
+	shadow_type_reg->ref_cnt--;
+
+	if (!shadow_type_reg->ref_cnt) {
+		__klp_shadow_free_all(shadow_type);
+		list_del(&shadow_type_reg->list);
+		kfree(shadow_type_reg);
+	}
+out:
+	spin_unlock_irq(&klp_shadow_lock);
+}
+EXPORT_SYMBOL_GPL(klp_shadow_unregister);
