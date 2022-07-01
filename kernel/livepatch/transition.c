@@ -123,8 +123,10 @@ static void klp_complete_transition(void)
 			continue;
 		if (klp_target_state == KLP_PATCHED)
 			klp_post_patch_callback(obj);
-		else if (klp_target_state == KLP_UNPATCHED)
+		else if (klp_target_state == KLP_UNPATCHED) {
 			klp_post_unpatch_callback(obj);
+			klp_unregister_shadow_types(obj);
+		}
 	}
 
 	pr_notice("'%s': %s complete\n", klp_transition_patch->mod->name,

@@ -141,6 +141,11 @@ static struct klp_shadow_type shadow_leak_type = {
 	.dtor = livepatch_fix1_dummy_leak_dtor,
 };
 
+struct klp_shadow_type *shadow_types[] = {
+	&shadow_leak_type,
+	NULL
+};
+
 static struct klp_func funcs[] = {
 	{
 		.old_name = "dummy_alloc",
@@ -156,6 +161,7 @@ static struct klp_object objs[] = {
 	{
 		.name = "livepatch_shadow_mod",
 		.funcs = funcs,
+		.shadow_types = shadow_types,
 	}, { }
 };
 
@@ -171,8 +177,6 @@ static int livepatch_shadow_fix1_init(void)
 
 static void livepatch_shadow_fix1_exit(void)
 {
-	/* Cleanup any existing SV_LEAK shadow variables */
-	klp_shadow_free_all(&shadow_leak_type);
 }
 
 module_init(livepatch_shadow_fix1_init);
