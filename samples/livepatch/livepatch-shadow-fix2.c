@@ -33,6 +33,9 @@
 #define SV_LEAK		1
 #define SV_COUNTER	2
 
+static struct klp_shadow_type shadow_leak_type;
+static struct klp_shadow_type shadow_counter_type;
+
 struct dummy {
 	struct list_head list;
 	unsigned long jiffies_expire;
@@ -47,9 +50,8 @@ static bool livepatch_fix2_dummy_check(struct dummy *d, unsigned long jiffies)
 	 * already have a SV_COUNTER shadow variable, then attach a
 	 * new one.
 	 */
-	shadow_count = klp_shadow_get_or_alloc(d, SV_COUNTER,
-				sizeof(*shadow_count), GFP_NOWAIT,
-				NULL, NULL);
+	shadow_count = klp_shadow_get_or_alloc(d, &shadow_counter_type,
+				sizeof(*shadow_count), GFP_NOWAIT, NULL);
 	if (shadow_count)
 		*shadow_count += 1;
 
@@ -72,9 +74,9 @@ static void livepatch_fix2_dummy_free(struct dummy *d)
 	int *shadow_count;
 
 	/* Patch: copy the memory leak patch from the fix1 module. */
-	shadow_leak = klp_shadow_get(d, SV_LEAK);
+	shadow_leak = klp_shadow_get(d, &shadow_leak_type);
 	if (shadow_leak)
-		klp_shadow_free(d, SV_LEAK, livepatch_fix2_dummy_leak_dtor);
+		klp_shadow_free(d, &shadow_leak_type);
 	else
 		pr_info("%s: dummy @ %p leaked!\n", __func__, d);
 
@@ -82,15 +84,24 @@ static void livepatch_fix2_dummy_free(struct dummy *d)
 	 * Patch: fetch the SV_COUNTER shadow variable and display
 	 * the final count.  Detach the shadow variable.
 	 */
-	shadow_count = klp_shadow_get(d, SV_COUNTER);
+	shadow_count = klp_shadow_get(d, &shadow_counter_type);
 	if (shadow_count) {
 		pr_info("%s: dummy @ %p, check counter = %d\n",
 			__func__, d, *shadow_count);
-		klp_shadow_free(d, SV_COUNTER, NULL);
+		klp_shadow_free(d, &shadow_counter_type);
 	}
 
 	kfree(d);
 }
+
+static struct klp_shadow_type shadow_leak_type = {
+	.id = SV_LEAK,
+	.dtor = livepatch_fix2_dummy_leak_dtor,
+};
+
+static struct klp_shadow_type shadow_counter_type = {
+	.id = SV_COUNTER,
+};
 
 static struct klp_func funcs[] = {
 	{
@@ -123,7 +134,7 @@ static int livepatch_shadow_fix2_init(void)
 static void livepatch_shadow_fix2_exit(void)
 {
 	/* Cleanup any existing SV_COUNTER shadow variables */
-	klp_shadow_free_all(SV_COUNTER, NULL);
+	klp_shadow_free_all(&shadow_leak_type);
 }
 
 module_init(livepatch_shadow_fix2_init);

@@ -63,24 +63,24 @@ struct klp_shadow {
  * klp_shadow_match() - verify a shadow variable matches given <obj, id>
  * @shadow:	shadow variable to match
  * @obj:	pointer to parent object
- * @id:		data identifier
+ * @shadow_type: type of the wanted shadow variable
  *
  * Return: true if the shadow variable matches.
  */
 static inline bool klp_shadow_match(struct klp_shadow *shadow, void *obj,
-				unsigned long id)
+				struct klp_shadow_type *shadow_type)
 {
-	return shadow->obj == obj && shadow->id == id;
+	return shadow->obj == obj && shadow->id == shadow_type->id;
 }
 
 /**
  * klp_shadow_get() - retrieve a shadow variable data pointer
  * @obj:	pointer to parent object
- * @id:		data identifier
+ * @shadow_type: type of the wanted shadow variable
  *
  * Return: the shadow variable data element, NULL on failure.
  */
-void *klp_shadow_get(void *obj, unsigned long id)
+void *klp_shadow_get(void *obj, struct klp_shadow_type *shadow_type)
 {
 	struct klp_shadow *shadow;
 
@@ -89,7 +89,7 @@ void *klp_shadow_get(void *obj, unsigned long id)
 	hash_for_each_possible_rcu(klp_shadow_hash, shadow, node,
 				   (unsigned long)obj) {
 
-		if (klp_shadow_match(shadow, obj, id)) {
+		if (klp_shadow_match(shadow, obj, shadow_type)) {
 			rcu_read_unlock();
 			return shadow->data;
 		}
@@ -101,14 +101,13 @@ void *klp_shadow_get(void *obj, unsigned long id)
 }
 EXPORT_SYMBOL_GPL(klp_shadow_get);
 
-static void *__klp_shadow_get_or_use(void *obj, unsigned long id,
-				     struct klp_shadow *new_shadow,
-				     klp_shadow_ctor_t ctor, void *ctor_data,
+static void *__klp_shadow_get_or_use(void *obj, struct klp_shadow_type *shadow_type,
+				     struct klp_shadow *new_shadow, void *ctor_data,
 				     bool *exist)
 {
 	void *shadow_data;
 
-	shadow_data = klp_shadow_get(obj, id);
+	shadow_data = klp_shadow_get(obj, shadow_type);
 	if (unlikely(shadow_data)) {
 		*exist = true;
 		return shadow_data;
@@ -116,15 +115,15 @@ static void *__klp_shadow_get_or_use(void *obj, unsigned long id,
 	*exist = false;
 
 	new_shadow->obj = obj;
-	new_shadow->id = id;
+	new_shadow->id = shadow_type->id;
 
-	if (ctor) {
+	if (shadow_type->ctor) {
 		int err;
 
-		err = ctor(obj, new_shadow->data, ctor_data);
+		err = shadow_type->ctor(obj, new_shadow->data, ctor_data);
 		if (err) {
 			pr_err("Failed to construct shadow variable <%p, %lx> (%d)\n",
-			       obj, id, err);
+			       obj, shadow_type->id, err);
 			return NULL;
 		}
 	}
@@ -136,9 +135,8 @@ static void *__klp_shadow_get_or_use(void *obj, unsigned long id,
 	return new_shadow->data;
 }
 
-static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
-				       size_t size, gfp_t gfp_flags,
-				       klp_shadow_ctor_t ctor, void *ctor_data,
+static void *__klp_shadow_get_or_alloc(void *obj, struct klp_shadow_type *shadow_type,
+				       size_t size, gfp_t gfp_flags, void *ctor_data,
 				       bool warn_on_exist)
 {
 	struct klp_shadow *new_shadow;
@@ -147,7 +145,7 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 	unsigned long flags;
 
 	/* Check if the shadow variable already exists */
-	shadow_data = klp_shadow_get(obj, id);
+	shadow_data = klp_shadow_get(obj, shadow_type);
 	if (shadow_data)
 		return shadow_data;
 
@@ -156,22 +154,25 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 	 * More complex setting can be done by @ctor function.  But it is
 	 * called only when the buffer is really used (under klp_shadow_lock).
 	 */
-	new_shadow = kzalloc(size + sizeof(*new_shadow), gfp_flags);
+	new_shadow = kzalloc(size + sizeof(struct klp_shadow), gfp_flags);
 	if (!new_shadow)
 		return NULL;
 
 	/* Look for <obj, id> again under the lock */
 	spin_lock_irqsave(&klp_shadow_lock, flags);
-	shadow_data = __klp_shadow_get_or_use(obj, id, new_shadow,
-					      ctor, ctor_data, &exist);
+	shadow_data = __klp_shadow_get_or_use(obj, shadow_type,
+					      new_shadow, ctor_data, &exist);
 	spin_unlock_irqrestore(&klp_shadow_lock, flags);
 
-	/* Throw away unused speculative allocation. */
+	/*
+	 * Throw away unused speculative allocation if the shadow variable
+	 * exists or if the ctor function failed.
+	 */
 	if (!shadow_data || exist)
 		kfree(new_shadow);
 
 	if (exist && warn_on_exist) {
-		WARN(1, "Duplicate shadow variable <%p, %lx>\n", obj, id);
+		WARN(1, "Duplicate shadow variable <%p, %lx>\n", obj, shadow_type->id);
 		return NULL;
 	}
 
@@ -181,10 +182,9 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
 /**
  * klp_shadow_alloc() - allocate and add a new shadow variable
  * @obj:	pointer to parent object
- * @id:		data identifier
+ * @shadow_type: type of the wanted shadow variable
  * @size:	size of attached data
  * @gfp_flags:	GFP mask for allocation
- * @ctor:	custom constructor to initialize the shadow data (optional)
  * @ctor_data:	pointer to any data needed by @ctor (optional)
  *
  * Allocates @size bytes for new shadow variable data using @gfp_flags.
@@ -202,22 +202,21 @@ static void *__klp_shadow_get_or_alloc(void *obj, unsigned long id,
  * Return: the shadow variable data element, NULL on duplicate or
  * failure.
  */
-void *klp_shadow_alloc(void *obj, unsigned long id,
-		       size_t size, gfp_t gfp_flags,
-		       klp_shadow_ctor_t ctor, void *ctor_data)
+void *klp_shadow_alloc(void *obj, struct klp_shadow_type *shadow_type,
+		       size_t size, gfp_t gfp_flags, void *ctor_data)
 {
-	return __klp_shadow_get_or_alloc(obj, id, size, gfp_flags,
-					 ctor, ctor_data, true);
+	return __klp_shadow_get_or_alloc(obj, shadow_type, size,
+					 gfp_flags, ctor_data,
+					 true);
 }
 EXPORT_SYMBOL_GPL(klp_shadow_alloc);
 
 /**
  * klp_shadow_get_or_alloc() - get existing or allocate a new shadow variable
  * @obj:	pointer to parent object
- * @id:		data identifier
+ * @shadow_type: type of the wanted shadow variable
  * @size:	size of attached data
  * @gfp_flags:	GFP mask for allocation
- * @ctor:	custom constructor to initialize the shadow data (optional)
  * @ctor_data:	pointer to any data needed by @ctor (optional)
  *
  * Returns a pointer to existing shadow data if an <obj, id> shadow
@@ -231,35 +230,33 @@ EXPORT_SYMBOL_GPL(klp_shadow_alloc);
  *
  * Return: the shadow variable data element, NULL on failure.
  */
-void *klp_shadow_get_or_alloc(void *obj, unsigned long id,
-			      size_t size, gfp_t gfp_flags,
-			      klp_shadow_ctor_t ctor, void *ctor_data)
+void *klp_shadow_get_or_alloc(void *obj, struct klp_shadow_type *shadow_type,
+			      size_t size, gfp_t gfp_flags, void *ctor_data)
 {
-	return __klp_shadow_get_or_alloc(obj, id, size, gfp_flags,
-					 ctor, ctor_data, false);
+	return __klp_shadow_get_or_alloc(obj, shadow_type, size,
+					 gfp_flags, ctor_data,
+					 false);
 }
 EXPORT_SYMBOL_GPL(klp_shadow_get_or_alloc);
 
 static void klp_shadow_free_struct(struct klp_shadow *shadow,
-				   klp_shadow_dtor_t dtor)
+				   struct klp_shadow_type *shadow_type)
 {
 	hash_del_rcu(&shadow->node);
-	if (dtor)
-		dtor(shadow->obj, shadow->data);
+	if (shadow_type->dtor)
+		shadow_type->dtor(shadow->obj, shadow->data);
 	kfree_rcu(shadow, rcu_head);
 }
 
 /**
  * klp_shadow_free() - detach and free a <obj, id> shadow variable
  * @obj:	pointer to parent object
- * @id:		data identifier
- * @dtor:	custom callback that can be used to unregister the variable
- *		and/or free data that the shadow variable points to (optional)
+ * @shadow_type: type of to be freed shadow variable
  *
  * This function releases the memory for this <obj, id> shadow variable
  * instance, callers should stop referencing it accordingly.
  */
-void klp_shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor)
+void klp_shadow_free(void *obj, struct klp_shadow_type *shadow_type)
 {
 	struct klp_shadow *shadow;
 	unsigned long flags;
@@ -270,8 +267,8 @@ void klp_shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor)
 	hash_for_each_possible(klp_shadow_hash, shadow, node,
 			       (unsigned long)obj) {
 
-		if (klp_shadow_match(shadow, obj, id)) {
-			klp_shadow_free_struct(shadow, dtor);
+		if (klp_shadow_match(shadow, obj, shadow_type)) {
+			klp_shadow_free_struct(shadow, shadow_type);
 			break;
 		}
 	}
@@ -280,7 +277,7 @@ void klp_shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor)
 }
 EXPORT_SYMBOL_GPL(klp_shadow_free);
 
-static void __klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
+static void __klp_shadow_free_all(struct klp_shadow_type *shadow_type)
 {
 	struct klp_shadow *shadow;
 	int i;
@@ -289,26 +286,24 @@ static void __klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
 
 	/* Delete all <*, id> from hash */
 	hash_for_each(klp_shadow_hash, i, shadow, node) {
-		if (klp_shadow_match(shadow, shadow->obj, id))
-			klp_shadow_free_struct(shadow, dtor);
+		if (klp_shadow_match(shadow, shadow->obj, shadow_type))
+			klp_shadow_free_struct(shadow, shadow_type);
 	}
 }
 
 /**
  * klp_shadow_free_all() - detach and free all <_, id> shadow variables
- * @id:		data identifier
- * @dtor:	custom callback that can be used to unregister the variable
- *		and/or free data that the shadow variable points to (optional)
+ * @shadow_type: type of to be freed shadow variables
  *
  * This function releases the memory for all <_, id> shadow variable
  * instances, callers should stop referencing them accordingly.
  */
-void klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
+void klp_shadow_free_all(struct klp_shadow_type *shadow_type)
 {
 	unsigned long flags;
 
 	spin_lock_irqsave(&klp_shadow_lock, flags);
-	__klp_shadow_free_all(id, dtor);
+	__klp_shadow_free_all(shadow_type);
 	spin_unlock_irqrestore(&klp_shadow_lock, flags);
 }
 EXPORT_SYMBOL_GPL(klp_shadow_free_all);
