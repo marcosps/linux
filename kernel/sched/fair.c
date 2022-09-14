@@ -3321,7 +3321,7 @@ static inline void update_cfs_group(struct sched_entity *se)
 }
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 
-static inline void cfs_rq_util_change(struct cfs_rq *cfs_rq, int flags)
+static inline void cfs_rq_util_change(struct cfs_rq *cfs_rq)
 {
 	struct rq *rq = rq_of(cfs_rq);
 
@@ -3340,7 +3340,7 @@ static inline void cfs_rq_util_change(struct cfs_rq *cfs_rq, int flags)
 		 *
 		 * See cpu_util_cfs().
 		 */
-		cpufreq_update_util(rq, flags);
+		cpufreq_update_util(rq, 0);
 	}
 }
 
@@ -3962,7 +3962,7 @@ static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 
 	add_tg_cfs_propagate(cfs_rq, se->avg.load_sum);
 
-	cfs_rq_util_change(cfs_rq, 0);
+	cfs_rq_util_change(cfs_rq);
 
 	trace_pelt_cfs_tp(cfs_rq);
 }
@@ -3992,7 +3992,7 @@ static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 
 	add_tg_cfs_propagate(cfs_rq, -se->avg.load_sum);
 
-	cfs_rq_util_change(cfs_rq, 0);
+	cfs_rq_util_change(cfs_rq);
 
 	trace_pelt_cfs_tp(cfs_rq);
 }
@@ -4033,7 +4033,7 @@ static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 		update_tg_load_avg(cfs_rq);
 
 	} else if (decayed) {
-		cfs_rq_util_change(cfs_rq, 0);
+		cfs_rq_util_change(cfs_rq);
 
 		if (flags & UPDATE_TG)
 			update_tg_load_avg(cfs_rq);
@@ -4295,7 +4295,7 @@ static inline bool cfs_rq_is_decayed(struct cfs_rq *cfs_rq)
 
 static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se, int not_used1)
 {
-	cfs_rq_util_change(cfs_rq, 0);
+	cfs_rq_util_change(cfs_rq);
 }
 
 static inline void remove_entity_load_avg(struct sched_entity *se) {}
