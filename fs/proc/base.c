@@ -2630,6 +2630,61 @@ static const struct file_operations proc_pid_set_timerslack_ns_operations = {
 	.release	= single_release,
 };
 
+#ifdef CONFIG_PREEMPT_RT
+static int proc_pref_freq_show(struct seq_file *m, void *v)
+{
+	struct inode *inode = m->private;
+	struct task_struct *p;
+
+	p = get_proc_task(inode);
+	if (!p)
+		return -ESRCH;
+
+	seq_printf(m, "%u\n", p->pref_freq);
+
+	put_task_struct(p);
+
+	return 0;
+}
+
+static ssize_t
+proc_pref_freq_write(struct file *file, const char __user *buf,
+	    size_t count, loff_t *offset)
+{
+	struct inode *inode = file_inode(file);
+	struct task_struct *p;
+	unsigned int pref_freq;
+	int err;
+
+	err = kstrtouint_from_user(buf, count, 10, &pref_freq);
+	if (err < 0)
+		return err;
+
+	p = get_proc_task(inode);
+	if (!p)
+		return -ESRCH;
+
+	p->pref_freq = pref_freq;
+
+	put_task_struct(p);
+
+	return count;
+}
+
+static int proc_pref_freq_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, proc_pref_freq_show, inode);
+}
+
+static const struct file_operations proc_pref_freq_operations = {
+	.open		= proc_pref_freq_open,
+	.read		= seq_read,
+	.write		= proc_pref_freq_write,
+	.llseek		= seq_lseek,
+	.release	= single_release,
+};
+#endif
+
 static struct dentry *proc_pident_instantiate(struct dentry *dentry,
 	struct task_struct *task, const void *ptr)
 {
@@ -3332,6 +3387,9 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_KSM
 	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),
 #endif
+#ifdef CONFIG_PREEMPT_RT
+	REG("pref_freq", S_IRUGO|S_IWUSR, proc_pref_freq_operations),
+#endif
 };
 
 static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
@@ -3668,6 +3726,9 @@ static const struct pid_entry tid_base_stuff[] = {
 #endif
 #ifdef CONFIG_KSM
 	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),
+#endif
+#ifdef CONFIG_PREEMPT_RT
+	REG("pref_freq", S_IRUGO|S_IWUSR, proc_pref_freq_operations),
 #endif
 };
 
