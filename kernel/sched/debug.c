@@ -8,8 +8,8 @@
  */
 
 /*
- * This allows printing both to /proc/sched_debug and
- * to the console
+ * This allows printing to /proc/pid/sched, debugfs/sched/debug and to the
+ * console
  */
 #define SEQ_printf(m, x...)			\
  do {						\
