@@ -216,15 +216,26 @@ typedef int (*klp_shadow_ctor_t)(void *obj,
 				 void *ctor_data);
 typedef void (*klp_shadow_dtor_t)(void *obj, void *shadow_data);
 
-void *klp_shadow_get(void *obj, unsigned long id);
-void *klp_shadow_alloc(void *obj, unsigned long id,
-		       size_t size, gfp_t gfp_flags,
-		       klp_shadow_ctor_t ctor, void *ctor_data);
-void *klp_shadow_get_or_alloc(void *obj, unsigned long id,
-			      size_t size, gfp_t gfp_flags,
-			      klp_shadow_ctor_t ctor, void *ctor_data);
-void klp_shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor);
-void klp_shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor);
+/**
+ * struct klp_shadow_type - shadow variable type used by the klp_object
+ * @id:		shadow variable type indentifier
+ * @ctor:	custom constructor to initialize the shadow data (optional)
+ * @dtor:	custom callback that can be used to unregister the variable
+ *		and/or free data that the shadow variable points to (optional)
+ */
+struct klp_shadow_type {
+	unsigned long id;
+	klp_shadow_ctor_t ctor;
+	klp_shadow_dtor_t dtor;
+};
+
+void *klp_shadow_get(void *obj, struct klp_shadow_type *shadow_type);
+void *klp_shadow_alloc(void *obj, struct klp_shadow_type *shadow_type,
+		       size_t size, gfp_t gfp_flags, void *ctor_data);
+void *klp_shadow_get_or_alloc(void *obj, struct klp_shadow_type *shadow_type,
+			      size_t size, gfp_t gfp_flags, void *ctor_data);
+void klp_shadow_free(void *obj, struct klp_shadow_type *shadow_type);
+void klp_shadow_free_all(struct klp_shadow_type *shadow_type);
 
 struct klp_state *klp_get_state(struct klp_patch *patch, unsigned long id);
 struct klp_state *klp_get_prev_state(unsigned long id);

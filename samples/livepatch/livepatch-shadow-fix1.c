@@ -32,6 +32,8 @@
 /* Shadow variable enums */
 #define SV_LEAK		1
 
+static struct klp_shadow_type shadow_leak_type;
+
 /* Allocate new dummies every second */
 #define ALLOC_PERIOD	1
 /* Check for expired dummies after a few new ones have been allocated */
@@ -84,8 +86,8 @@ static struct dummy *livepatch_fix1_dummy_alloc(void)
 	if (!leak)
 		goto err_leak;
 
-	shadow_leak = klp_shadow_alloc(d, SV_LEAK, sizeof(leak), GFP_KERNEL,
-				       shadow_leak_ctor, &leak);
+	shadow_leak = klp_shadow_alloc(d, &shadow_leak_type, sizeof(leak),
+				       GFP_KERNEL, &leak);
 	if (!shadow_leak) {
 		pr_err("%s: failed to allocate shadow variable for the leaking pointer: dummy @ %p, leak @ %p\n",
 		       __func__, d, leak);
@@ -124,14 +126,20 @@ static void livepatch_fix1_dummy_free(struct dummy *d)
 	 * not exist (ie, dummy structures allocated before this livepatch
 	 * was loaded.)
 	 */
-	shadow_leak = klp_shadow_get(d, SV_LEAK);
+	shadow_leak = klp_shadow_get(d, &shadow_leak_type);
 	if (shadow_leak)
-		klp_shadow_free(d, SV_LEAK, livepatch_fix1_dummy_leak_dtor);
+		klp_shadow_free(d, &shadow_leak_type);
 	else
 		pr_info("%s: dummy @ %p leaked!\n", __func__, d);
 
 	kfree(d);
 }
+
+static struct klp_shadow_type shadow_leak_type = {
+	.id = SV_LEAK,
+	.ctor = shadow_leak_ctor,
+	.dtor = livepatch_fix1_dummy_leak_dtor,
+};
 
 static struct klp_func funcs[] = {
 	{
@@ -164,7 +172,7 @@ static int livepatch_shadow_fix1_init(void)
 static void livepatch_shadow_fix1_exit(void)
 {
 	/* Cleanup any existing SV_LEAK shadow variables */
-	klp_shadow_free_all(SV_LEAK, livepatch_fix1_dummy_leak_dtor);
+	klp_shadow_free_all(&shadow_leak_type);
 }
 
 module_init(livepatch_shadow_fix1_init);

@@ -67,7 +67,7 @@ $MOD_TEST: klp_shadow_get(obj=PTR9, id=0x1235) = PTR11
 $MOD_TEST:   got expected PTR11 -> PTR10 result
 $MOD_TEST: klp_shadow_get(obj=PTR14, id=0x1235) = PTR16
 $MOD_TEST:   got expected PTR16 -> PTR15 result
-$MOD_TEST: klp_shadow_free_all(id=0x1235, dtor=PTR0)
+$MOD_TEST: klp_shadow_free_all(id=0x1235, dtor=PTR17)
 $MOD_TEST: klp_shadow_get(obj=PTR1, id=0x1235) = PTR0
 $MOD_TEST:   got expected NULL result
 $MOD_TEST: klp_shadow_get(obj=PTR9, id=0x1235) = PTR0

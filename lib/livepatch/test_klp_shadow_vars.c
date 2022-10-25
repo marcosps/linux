@@ -58,58 +58,64 @@ static int ptr_id(void *ptr)
  * to the kernel log for testing verification.  Don't display raw pointers,
  * but use the ptr_id() value instead.
  */
-static void *shadow_get(void *obj, unsigned long id)
+static void *shadow_get(void *obj, struct klp_shadow_type *shadow_type)
 {
 	int **sv;
 
-	sv = klp_shadow_get(obj, id);
+	sv = klp_shadow_get(obj, shadow_type);
 	pr_info("klp_%s(obj=PTR%d, id=0x%lx) = PTR%d\n",
-		__func__, ptr_id(obj), id, ptr_id(sv));
+		__func__, ptr_id(obj), shadow_type->id, ptr_id(sv));
 
 	return sv;
 }
 
-static void *shadow_alloc(void *obj, unsigned long id, size_t size,
-			  gfp_t gfp_flags, klp_shadow_ctor_t ctor,
-			  void *ctor_data)
+static void *shadow_alloc(void *obj, struct klp_shadow_type *shadow_type,
+			  size_t size, gfp_t gfp_flags, void *ctor_data)
 {
 	int **var = ctor_data;
 	int **sv;
 
-	sv = klp_shadow_alloc(obj, id, size, gfp_flags, ctor, var);
+	sv = klp_shadow_alloc(obj, shadow_type, size, gfp_flags, var);
 	pr_info("klp_%s(obj=PTR%d, id=0x%lx, size=%zx, gfp_flags=%pGg), ctor=PTR%d, ctor_data=PTR%d = PTR%d\n",
-		__func__, ptr_id(obj), id, size, &gfp_flags, ptr_id(ctor),
+		__func__, ptr_id(obj), shadow_type->id, size, &gfp_flags, ptr_id(shadow_type->ctor),
 		ptr_id(*var), ptr_id(sv));
 
 	return sv;
 }
 
-static void *shadow_get_or_alloc(void *obj, unsigned long id, size_t size,
-				 gfp_t gfp_flags, klp_shadow_ctor_t ctor,
-				 void *ctor_data)
+static void *shadow_get_or_alloc(void *obj, struct klp_shadow_type *shadow_type,
+				 size_t size, gfp_t gfp_flags, void *ctor_data)
 {
 	int **var = ctor_data;
 	int **sv;
 
-	sv = klp_shadow_get_or_alloc(obj, id, size, gfp_flags, ctor, var);
+	sv = klp_shadow_get_or_alloc(obj, shadow_type, size, gfp_flags, var);
 	pr_info("klp_%s(obj=PTR%d, id=0x%lx, size=%zx, gfp_flags=%pGg), ctor=PTR%d, ctor_data=PTR%d = PTR%d\n",
-		__func__, ptr_id(obj), id, size, &gfp_flags, ptr_id(ctor),
+		__func__, ptr_id(obj), shadow_type->id, size, &gfp_flags, ptr_id(shadow_type->ctor),
 		ptr_id(*var), ptr_id(sv));
 
 	return sv;
 }
 
-static void shadow_free(void *obj, unsigned long id, klp_shadow_dtor_t dtor)
+static void shadow_free(void *obj, struct klp_shadow_type *shadow_type)
 {
-	klp_shadow_free(obj, id, dtor);
+	klp_shadow_free(obj, shadow_type);
 	pr_info("klp_%s(obj=PTR%d, id=0x%lx, dtor=PTR%d)\n",
-		__func__, ptr_id(obj), id, ptr_id(dtor));
+		__func__, ptr_id(obj), shadow_type->id, ptr_id(shadow_type->dtor));
 }
 
-static void shadow_free_all(unsigned long id, klp_shadow_dtor_t dtor)
+/*
+ * With more than one item to free in the list, order is not determined and
+ * shadow_dtor will not be passed to shadow_free_all() which would make the
+ * test fail. (see pass 6)
+ */
+static bool verbose_dtor = true;
+static void shadow_free_all(struct klp_shadow_type *shadow_type)
 {
-	klp_shadow_free_all(id, dtor);
-	pr_info("klp_%s(id=0x%lx, dtor=PTR%d)\n", __func__, id, ptr_id(dtor));
+	verbose_dtor = false;
+	klp_shadow_free_all(shadow_type);
+	verbose_dtor = true;
+	pr_info("klp_%s(id=0x%lx, dtor=PTR%d)\n", __func__, shadow_type->id, ptr_id(shadow_type->dtor));
 }
 
 
@@ -128,17 +134,14 @@ static int shadow_ctor(void *obj, void *shadow_data, void *ctor_data)
 	return 0;
 }
 
-/*
- * With more than one item to free in the list, order is not determined and
- * shadow_dtor will not be passed to shadow_free_all() which would make the
- * test fail. (see pass 6)
- */
 static void shadow_dtor(void *obj, void *shadow_data)
 {
 	int **sv = shadow_data;
 
-	pr_info("%s(obj=PTR%d, shadow_data=PTR%d)\n",
-		__func__, ptr_id(obj), ptr_id(sv));
+	if (verbose_dtor) {
+		pr_info("%s(obj=PTR%d, shadow_data=PTR%d)\n",
+			__func__, ptr_id(obj), ptr_id(sv));
+	}
 }
 
 /* number of objects we simulate that need shadow vars */
@@ -147,6 +150,18 @@ static void shadow_dtor(void *obj, void *shadow_data)
 /* dynamically created obj fields have the following shadow var id values */
 #define SV_ID1 0x1234
 #define SV_ID2 0x1235
+
+struct klp_shadow_type shadow_type_1 = {
+	.id = SV_ID1,
+	.ctor = shadow_ctor,
+	.dtor = shadow_dtor,
+};
+
+struct klp_shadow_type shadow_type_2 = {
+	.id = SV_ID2,
+	.ctor = shadow_ctor,
+	.dtor = shadow_dtor,
+};
 
 /*
  * The main test case adds/removes new fields (shadow var) to each of these
@@ -179,7 +194,7 @@ static int test_klp_shadow_vars_init(void)
 	 * With an empty shadow variable hash table, expect not to find
 	 * any matches.
 	 */
-	sv = shadow_get(&objs[0], SV_ID1);
+	sv = shadow_get(&objs[0], &shadow_type_1);
 	if (!sv)
 		pr_info("  got expected NULL result\n");
 
@@ -189,13 +204,13 @@ static int test_klp_shadow_vars_init(void)
 		ptr_id(pnfields1[i]);
 
 		if (i % 2) {
-			sv1[i] = shadow_alloc(&objs[i], SV_ID1,
+			sv1[i] = shadow_alloc(&objs[i], &shadow_type_1,
 					sizeof(pnfields1[i]), GFP_KERNEL,
-					shadow_ctor, &pnfields1[i]);
+					&pnfields1[i]);
 		} else {
-			sv1[i] = shadow_get_or_alloc(&objs[i], SV_ID1,
+			sv1[i] = shadow_get_or_alloc(&objs[i], &shadow_type_1,
 					sizeof(pnfields1[i]), GFP_KERNEL,
-					shadow_ctor, &pnfields1[i]);
+					&pnfields1[i]);
 		}
 		if (!sv1[i]) {
 			ret = -ENOMEM;
@@ -204,8 +219,9 @@ static int test_klp_shadow_vars_init(void)
 
 		pnfields2[i] = &nfields2[i];
 		ptr_id(pnfields2[i]);
-		sv2[i] = shadow_alloc(&objs[i], SV_ID2, sizeof(pnfields2[i]),
-					GFP_KERNEL, shadow_ctor, &pnfields2[i]);
+		sv2[i] = shadow_alloc(&objs[i], &shadow_type_2,
+				      sizeof(pnfields2[i]),
+				      GFP_KERNEL, &pnfields2[i]);
 		if (!sv2[i]) {
 			ret = -ENOMEM;
 			goto out;
@@ -215,7 +231,7 @@ static int test_klp_shadow_vars_init(void)
 	/* pass 2: verify we find allocated svars and where they point to */
 	for (i = 0; i < NUM_OBJS; i++) {
 		/* check the "char" svar for all objects */
-		sv = shadow_get(&objs[i], SV_ID1);
+		sv = shadow_get(&objs[i], &shadow_type_1);
 		if (!sv) {
 			ret = -EINVAL;
 			goto out;
@@ -225,7 +241,7 @@ static int test_klp_shadow_vars_init(void)
 				ptr_id(sv1[i]), ptr_id(*sv1[i]));
 
 		/* check the "int" svar for all objects */
-		sv = shadow_get(&objs[i], SV_ID2);
+		sv = shadow_get(&objs[i], &shadow_type_2);
 		if (!sv) {
 			ret = -EINVAL;
 			goto out;
@@ -240,8 +256,9 @@ static int test_klp_shadow_vars_init(void)
 		pndup[i] = &nfields1[i];
 		ptr_id(pndup[i]);
 
-		sv = shadow_get_or_alloc(&objs[i], SV_ID1, sizeof(pndup[i]),
-					GFP_KERNEL, shadow_ctor, &pndup[i]);
+		sv = shadow_get_or_alloc(&objs[i], &shadow_type_1,
+					 sizeof(pndup[i]),
+					 GFP_KERNEL, &pndup[i]);
 		if (!sv) {
 			ret = -EINVAL;
 			goto out;
@@ -253,15 +270,15 @@ static int test_klp_shadow_vars_init(void)
 
 	/* pass 4: free <objs[*], SV_ID1> pairs of svars, verify removal */
 	for (i = 0; i < NUM_OBJS; i++) {
-		shadow_free(&objs[i], SV_ID1, shadow_dtor); /* 'char' pairs */
-		sv = shadow_get(&objs[i], SV_ID1);
+		shadow_free(&objs[i], &shadow_type_1); /* 'char' pairs */
+		sv = shadow_get(&objs[i], &shadow_type_1);
 		if (!sv)
 			pr_info("  got expected NULL result\n");
 	}
 
 	/* pass 5: check we still find <objs[*], SV_ID2> svar pairs */
 	for (i = 0; i < NUM_OBJS; i++) {
-		sv = shadow_get(&objs[i], SV_ID2);	/* 'int' pairs */
+		sv = shadow_get(&objs[i], &shadow_type_2); /* 'int' pairs */
 		if (!sv) {
 			ret = -EINVAL;
 			goto out;
@@ -272,9 +289,9 @@ static int test_klp_shadow_vars_init(void)
 	}
 
 	/* pass 6: free all the <objs[*], SV_ID2> svar pairs too. */
-	shadow_free_all(SV_ID2, NULL);		/* 'int' pairs */
+	shadow_free_all(&shadow_type_2);		/* 'int' pairs */
 	for (i = 0; i < NUM_OBJS; i++) {
-		sv = shadow_get(&objs[i], SV_ID2);
+		sv = shadow_get(&objs[i], &shadow_type_2);
 		if (!sv)
 			pr_info("  got expected NULL result\n");
 	}
@@ -283,8 +300,8 @@ static int test_klp_shadow_vars_init(void)
 
 	return 0;
 out:
-	shadow_free_all(SV_ID1, NULL);		/* 'char' pairs */
-	shadow_free_all(SV_ID2, NULL);		/* 'int' pairs */
+	shadow_free_all(&shadow_type_1); /* 'char' pairs */
+	shadow_free_all(&shadow_type_2); /* 'int' pairs */
 	free_ptr_list();
 
 	return ret;
