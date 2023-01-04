@@ -1,25 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0
 
 TEST_FILES := settings \
-		test_modules
+		test_modules \
+		functions.sh
 
-# We need the test_modules dir in order to make gen_tar and install to work
-TEST_GEN_PROGS_EXTENDED := test_programs/test_klp-call_getpid \
-			test_modules/test_klp_atomic_replace.ko \
-			test_modules/test_klp_callbacks_busy.ko \
-			test_modules/test_klp_callbacks_demo.ko \
-			test_modules/test_klp_callbacks_demo2.ko \
-			test_modules/test_klp_callbacks_mod.ko \
-			test_modules/test_klp_livepatch.ko \
-			test_modules/test_klp_state.ko \
-			test_modules/test_klp_state2.ko \
-			test_modules/test_klp_state3.ko \
-			test_modules/test_klp_shadow_vars.ko \
-			test_modules/test_klp_syscall.ko
+TEST_GEN_FILES := test_programs/test_klp-call_getpid
 
-TEST_PROGS_EXTENDED := functions.sh
-TEST_PROGS := \
-	test-livepatch.sh \
+TEST_PROGS := test-livepatch.sh \
 	test-callbacks.sh \
 	test-shadow-vars.sh \
 	test-state.sh \
@@ -27,16 +14,6 @@ TEST_PROGS := \
 	test-sysfs.sh \
 	test-syscall.sh
 
-# override lib.mk's default rules
-OVERRIDE_TARGETS := 1
-override define CLEAN
-	rm -f $(TEST_GEN_PROGS_EXTENDED)
-	make -C test_modules clean
-endef
+TEST_GEN_MODS_DIR := test_modules
 
 include ../lib.mk
-
-# Here we remove the test_modules path from the module.ko to match the Makefile
-# rule in test_modules directory
-%.ko:
-	make -C test_modules $(notdir $@)
