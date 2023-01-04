@@ -13,8 +13,8 @@ obj-m += test_klp_atomic_replace.o \
 	test_klp_shadow_vars.o \
 	test_klp_syscall.o
 
-%.ko:
-	make -C $(KDIR) M=$(TESTMODS_DIR) $@
+all:
+	make -C $(KDIR) M=$(TESTMODS_DIR) modules
 
 clean:
 	make -C $(KDIR) M=$(TESTMODS_DIR) clean
