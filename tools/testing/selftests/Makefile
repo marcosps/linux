@@ -159,10 +159,15 @@ export KHDR_INCLUDES
 # all isn't the first target in the file.
 .DEFAULT_GOAL := all
 
+#undefine abs_objtree
+
 all:
+	$(info XXX Makefile at $(shell pwd), target all, BUILD $(BUILD))
+	$(info srctree $(srctree), abs_srctree $(abs_srctree), abs_objtree $(abs_objtree))
 	@ret=1;							\
 	for TARGET in $(TARGETS); do				\
 		BUILD_TARGET=$$BUILD/$$TARGET;			\
+		echo "XXX BUILD_TARGET "$$BUILD_TARGET; \
 		mkdir $$BUILD_TARGET  -p;			\
 		$(MAKE) OUTPUT=$$BUILD_TARGET -C $$TARGET	\
 				O=$(abs_objtree)		\
@@ -171,6 +176,8 @@ all:
 	done; exit $$ret;
 
 run_tests: all
+	$(info XXX Makefile at $(shell pwd), target run_tests, BUILD $(BUILD))
+	$(info srctree $(srctree), abs_srctree $(abs_srctree), abs_objtree $(abs_objtree))
 	@for TARGET in $(TARGETS); do \
 		BUILD_TARGET=$$BUILD/$$TARGET;	\
 		$(MAKE) OUTPUT=$$BUILD_TARGET -C $$TARGET run_tests \

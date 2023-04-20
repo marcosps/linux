@@ -60,6 +60,8 @@ TEST_GEN_FILES := $(patsubst %,$(OUTPUT)/%,$(TEST_GEN_FILES))
 TEST_GEN_MODS_DIR := $(patsubst %,$(OUTPUT)/%,$(TEST_GEN_MODS_DIR))
 
 gen_mods_dir:
+	$(info XXX Makefile at $(shell pwd))
+	$(info srctree $(srctree), abs_srctree $(abs_srctree), abs_objtree $(abs_objtree))
 	@if [ "X$(TEST_GEN_MODS_DIR)" != "X" ]; then	\
 		$(MAKE) -C $(TEST_GEN_MODS_DIR);	\
 	fi

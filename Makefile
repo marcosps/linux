@@ -1442,7 +1442,7 @@ tools/%: FORCE
 # Kernel selftest
 
 PHONY += kselftest
-kselftest: headers
+kselftest:
 	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests run_tests
 
 kselftest-%: headers FORCE
