@@ -1357,6 +1357,13 @@ tools/%: FORCE
 # ---------------------------------------------------------------------------
 # Kernel selftest
 
+PHONY += kout kout-clean
+kout:
+	$(Q)$(MAKE) -C $(srctree)/hello-module
+
+kout-clean:
+	$(Q)$(MAKE) -C $(srctree)/hello-module clean
+
 PHONY += kselftest
 kselftest: headers
 	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests run_tests

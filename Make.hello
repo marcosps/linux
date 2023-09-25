@@ -1,0 +1,6 @@
+PHONY += kout kout-clean
+kout:
+	$(Q)$(MAKE) -C hello-module
+
+kout-clean:
+	$(Q)$(MAKE) -C hello-module clean
