@@ -1371,6 +1371,12 @@ kselftest-merge:
 		xargs $(srctree)/scripts/kconfig/merge_config.sh -m $(objtree)/.config
 	$(Q)$(MAKE) -f $(srctree)/Makefile olddefconfig
 
+PHONY += testmod testmod-clean
+testmod:
+	$(Q)$(MAKE) -C $(srctree)/test-mod
+testmod-clean:
+	$(Q)$(MAKE) -C $(srctree)/test-mod clean
+
 # ---------------------------------------------------------------------------
 # Devicetree files
 
