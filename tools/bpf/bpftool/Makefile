@@ -1,10 +1,26 @@
 # SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 include ../../scripts/Makefile.include
 
+# This will work when bpf is built in tools env. where srctree
+# isn't set and when invoked from selftests build, where srctree
+# is set to ".". building_out_of_srctree is undefined for in srctree
+# builds
 ifeq ($(srctree),)
+update_srctree := 1
+endif
+ifndef building_out_of_srctree
+update_srctree := 1
+endif
+
+ifeq ($(update_srctree),1)
+# use abs_srctree is it's defined
+ifneq ($(abs_srctree),)
+srctree := $(abs_srctree)
+else
 srctree := $(patsubst %/,%,$(dir $(CURDIR)))
 srctree := $(patsubst %/,%,$(dir $(srctree)))
 srctree := $(patsubst %/,%,$(dir $(srctree)))
+endif # ifneq ($(abs_srctree),)
 endif
 
 ifeq ($(V),1)

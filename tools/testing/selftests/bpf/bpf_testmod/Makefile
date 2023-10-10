@@ -12,6 +12,8 @@ MODULES = bpf_testmod.ko
 obj-m += bpf_testmod.o
 CFLAGS_bpf_testmod.o = -I$(src)
 
+#unexport sub_make_done
+
 all:
 	+$(Q)make -C $(KDIR) M=$(BPF_TESTMOD_DIR) modules
 
