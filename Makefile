@@ -752,6 +752,12 @@ CFLAGS_GCOV	+= -fno-tree-loop-im
 endif
 export CFLAGS_GCOV
 
+ifdef CONFIG_LIVEPATCH_IPA_CLONES
+ifeq ($(KBUILD_EXTMOD),)
+KBUILD_CFLAGS += -fdump-ipa-clones
+endif
+endif
+
 # The arch Makefiles can override CC_FLAGS_FTRACE. We may also append it later.
 ifdef CONFIG_FUNCTION_TRACER
   CC_FLAGS_FTRACE := -pg
@@ -930,6 +936,10 @@ ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
 KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
 KBUILD_RUSTFLAGS_KERNEL += -Zfunction-sections=y
 LDFLAGS_vmlinux += --gc-sections
+endif
+
+ifdef CONFIG_LIVEPATCH
+KBUILD_CFLAGS += $(call cc-option, -flive-patching=inline-clone)
 endif
 
 ifdef CONFIG_SHADOW_CALL_STACK
