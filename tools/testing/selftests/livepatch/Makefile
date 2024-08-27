@@ -13,6 +13,10 @@ TEST_PROGS := \
 	test-syscall.sh \
 	test-extern.sh
 
+ifdef CONFIG_X86_KERNEL_IBT
+	TEST_PROGS += test-ibt.sh
+endif
+
 TEST_FILES := settings
 
 include ../lib.mk

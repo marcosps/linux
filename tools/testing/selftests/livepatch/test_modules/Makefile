@@ -15,6 +15,8 @@ obj-m += test_klp_atomic_replace.o \
 	test_klp_shadow_vars.o \
 	test_klp_syscall.o
 
+obj-$(CONFIG_X86_KERNEL_IBT) += test_klp_ibt.o
+
 # Ensure that KDIR exists, otherwise skip the compilation
 modules:
 ifneq ("$(wildcard $(KDIR))", "")

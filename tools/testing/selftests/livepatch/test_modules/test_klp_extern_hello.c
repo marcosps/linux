@@ -13,6 +13,26 @@ static int hello_get(char *buffer, const struct kernel_param *kp)
 	return sysfs_emit(buffer, "%s kernel module.\n", hello_msg);
 }
 
+#ifdef CONFIG_X86_KERNEL_IBT
+static __attribute__((nocf_check)) int hello_get_alt(char *buffer, const struct kernel_param *kp)
+{
+	return sysfs_emit(buffer, "%s unused function.\n", hello_msg);
+}
+
+static int fail_get(char *buffer, const struct kernel_param *kp)
+{
+	int __attribute__((nocf_check)) (* volatile klpe_hello_get_alt)(char *, const struct kernel_param *) = hello_get_alt;
+	return (*klpe_hello_get_alt)(buffer, kp);
+}
+
+static const struct kernel_param_ops fail_ops = {
+	.get	= fail_get,
+};
+
+module_param_cb(fail, &fail_ops, NULL, 0400);
+MODULE_PARM_DESC(fail, "Read only parameter failing the reader.");
+#endif
+
 static const struct kernel_param_ops hello_ops = {
 	.get	= hello_get,
 };
