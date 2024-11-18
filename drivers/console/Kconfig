@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0
+config SCONSOLE
+	tristate "Simple Console"
+	depends on PRINTK
+	help
+	  Simple Console is a simple implementation of a console driver to exercise
+	  the console and NBCON implementations.
+
+	  If unsure, say Y.
