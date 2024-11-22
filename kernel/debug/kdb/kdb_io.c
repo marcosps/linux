@@ -589,7 +589,7 @@ static void kdb_msg_write(const char *msg, int msg_len)
 	 */
 	cookie = console_srcu_read_lock();
 	for_each_console_srcu(c) {
-		if (!(console_srcu_read_flags(c) & CON_ENABLED))
+		if (console_srcu_read_flags(c) & CON_SUSPENDED)
 			continue;
 		if (c == dbg_io_ops->cons)
 			continue;
