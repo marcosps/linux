@@ -3343,7 +3343,7 @@ void console_unblank(void)
 		if (flags & CON_SUSPENDED)
 			continue;
 
-		if ((flags & CON_ENABLED) && c->unblank) {
+		if (c->unblank) {
 			found_unblank = true;
 			break;
 		}
@@ -3384,7 +3384,7 @@ void console_unblank(void)
 		if (flags & CON_SUSPENDED)
 			continue;
 
-		if ((flags & CON_ENABLED) && c->unblank)
+		if (c->unblank)
 			c->unblank();
 	}
 	console_srcu_read_unlock(cookie);
