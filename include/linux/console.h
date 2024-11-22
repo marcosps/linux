@@ -625,6 +625,7 @@ enum con_flush_mode {
 extern int add_preferred_console(const char *name, const short idx, char *options);
 extern void console_force_preferred_locked(struct console *con);
 extern void register_console(struct console *);
+extern void register_console_force(struct console *);
 extern int unregister_console(struct console *);
 extern void console_lock(void);
 extern int console_trylock(void);
