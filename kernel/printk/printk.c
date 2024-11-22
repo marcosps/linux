@@ -241,7 +241,7 @@ int devkmsg_sysctl_set_loglvl(const struct ctl_table *table, int write,
 /**
  * console_list_lock - Lock the console list
  *
- * For console list or console->flags updates
+ * For console list, console->flags and consoles_suspended updates
  */
 void console_list_lock(void)
 {
@@ -382,6 +382,8 @@ bool other_cpu_in_panic(void)
  * locked without the console semaphore held).
  */
 static int console_locked;
+
+bool consoles_suspended;
 
 /*
  *	Array of consoles built from command line options (console=)
@@ -2739,16 +2741,13 @@ MODULE_PARM_DESC(console_no_auto_verbose, "Disable console loglevel raise to hig
  */
 void console_suspend_all(void)
 {
-	struct console *con;
-
 	if (!console_suspend_enabled)
 		return;
 	pr_info("Suspending console(s) (use no_console_suspend to debug)\n");
 	pr_flush(1000, true);
 
 	console_list_lock();
-	for_each_console(con)
-		console_srcu_write_flags(con, con->flags | CON_SUSPENDED);
+	consoles_suspended = true;
 	console_list_unlock();
 
 	/*
@@ -2763,14 +2762,12 @@ void console_suspend_all(void)
 void console_resume_all(void)
 {
 	struct console_flush_type ft;
-	struct console *con;
 
 	if (!console_suspend_enabled)
 		return;
 
 	console_list_lock();
-	for_each_console(con)
-		console_srcu_write_flags(con, con->flags & ~CON_SUSPENDED);
+	consoles_suspended = false;
 	console_list_unlock();
 
 	/*
@@ -3198,7 +3195,7 @@ static bool console_flush_all(bool do_cond_resched, u64 *next_seq, bool *handove
 			if ((flags & CON_NBCON) && (ft.nbcon_atomic || ft.nbcon_offload))
 				continue;
 
-			if (!console_is_usable(con, flags, !do_cond_resched))
+			if (!console_is_usable(con, flags, !do_cond_resched, consoles_suspended))
 				continue;
 			any_usable = true;
 
@@ -3586,7 +3583,7 @@ static bool legacy_kthread_should_wakeup(void)
 		if ((flags & CON_NBCON) && (ft.nbcon_atomic || ft.nbcon_offload))
 			continue;
 
-		if (!console_is_usable(con, flags, false))
+		if (!console_is_usable(con, flags, false, consoles_suspended))
 			continue;
 
 		if (flags & CON_NBCON) {
@@ -4147,7 +4144,7 @@ static int unregister_console_locked(struct console *console)
 
 	if (!console_is_registered_locked(console))
 		res = -ENODEV;
-	else if (console_is_usable(console, console->flags, true))
+	else if (console_is_usable(console, console->flags, true, consoles_suspended))
 		__pr_flush(console, 1000, true);
 
 	/* Disable it unconditionally */
@@ -4422,8 +4419,8 @@ static bool __pr_flush(struct console *con, int timeout_ms, bool reset_on_progre
 			 * that they make forward progress, so only increment
 			 * @diff for usable consoles.
 			 */
-			if (!console_is_usable(c, flags, true) &&
-			    !console_is_usable(c, flags, false)) {
+			if (!console_is_usable(c, flags, true, consoles_suspended) &&
+			    !console_is_usable(c, flags, false, consoles_suspended)) {
 				continue;
 			}
 

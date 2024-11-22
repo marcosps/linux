@@ -117,8 +117,12 @@ void nbcon_kthreads_wake(void);
  * which can also play a role in deciding if @con can be used to print
  * records.
  */
-static inline bool console_is_usable(struct console *con, short flags, bool use_atomic)
+static inline bool console_is_usable(struct console *con, short flags,
+				     bool use_atomic, bool consoles_suspended)
 {
+	if (consoles_suspended)
+		return false;
+
 	if (!(flags & CON_ENABLED))
 		return false;
 
@@ -211,6 +215,7 @@ extern bool have_boot_console;
 extern bool have_nbcon_console;
 extern bool have_legacy_console;
 extern bool legacy_allow_panic_sync;
+extern bool consoles_suspended;
 
 /**
  * struct console_flush_type - Define available console flush methods
