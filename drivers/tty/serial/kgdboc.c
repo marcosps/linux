@@ -585,7 +585,8 @@ static int __init kgdboc_earlycon_init(char *opt)
 	console_list_lock();
 	for_each_console(con) {
 		if (con->write && con->read &&
-		    (con->flags & (CON_BOOT | CON_ENABLED)) &&
+		    (con->flags & CON_BOOT) &&
+		    ((con->flags & CON_SUSPENDED) == 0) &&
 		    (!opt || !opt[0] || strcmp(con->name, opt) == 0))
 			break;
 	}
