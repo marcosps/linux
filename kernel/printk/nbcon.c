@@ -10,6 +10,7 @@
 #include <linux/export.h>
 #include <linux/init.h>
 #include <linux/irqflags.h>
+#include <linux/kdb.h>
 #include <linux/kthread.h>
 #include <linux/minmax.h>
 #include <linux/percpu.h>
@@ -247,6 +248,8 @@ static int nbcon_context_try_acquire_direct(struct nbcon_context *ctxt,
 		 * Panic does not imply that the console is owned. However,
 		 * since all non-panic CPUs are stopped during panic(), it
 		 * is safer to have them avoid gaining console ownership.
+		 * The only exception is if kdb is active, which may print
+		 * from multiple CPUs during a panic.
 		 *
 		 * If this acquire is a reacquire (and an unsafe takeover
 		 * has not previously occurred) then it is allowed to attempt
@@ -255,6 +258,7 @@ static int nbcon_context_try_acquire_direct(struct nbcon_context *ctxt,
 		 * interrupted by the panic CPU while printing.
 		 */
 		if (other_cpu_in_panic() &&
+		    READ_ONCE(kdb_printf_cpu) != raw_smp_processor_id() &&
 		    (!is_reacquire || cur->unsafe_takeover)) {
 			return -EPERM;
 		}
