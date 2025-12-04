@@ -52,7 +52,7 @@ static ssize_t scon_read(struct file *f, char __user *buf, size_t count,
 	return count;
 }
 
-static void write_msg(struct console *con, const char *msg, unsigned int len)
+static struct scon_msg *alloc_msg(const char *msg, unsigned int len)
 {
 	/*
 	 * We need to allocate memory enough for the message, and use
@@ -64,7 +64,7 @@ static void write_msg(struct console *con, const char *msg, unsigned int len)
 
 	if (!smsg) {
 		pr_err("failed to allocate message!\n");
-		return;
+		return NULL;
 	}
 
 	smsg->len = len + 1;
@@ -74,6 +74,14 @@ static void write_msg(struct console *con, const char *msg, unsigned int len)
 	 * unnecessary?
 	 */
 	smsg->msg[len - 1] = '\n';
+
+	return smsg;
+}
+
+static void write_msg(struct console *con, const char *msg, unsigned int len)
+{
+	struct scon_msg *smsg = alloc_msg(msg, len);
+
 	/* Always add new messages to the end of the messages list */
 	list_add_tail(&smsg->list, &msgs);
 }
