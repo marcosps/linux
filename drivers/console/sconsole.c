@@ -16,6 +16,7 @@
 #include <linux/list.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <linux/sched.h>
 #include <linux/slab.h>
 
 struct scon_msg {
@@ -100,6 +101,17 @@ static void sconsole_write_thread(struct console *con, struct nbcon_write_contex
 
 	nbcon_exit_unsafe(wctxt);
 }
+
+/* Only handle migration since the driver doesn't need anything else */
+static void sconsole_device_lock(struct console *con, unsigned long *flags)
+{
+	migrate_disable();
+}
+
+static void sconsole_device_unlock(struct console *con, unsigned long flags)
+{
+	migrate_enable();
+}
 #endif
 
 static struct file_operations scon_fops = {
@@ -119,6 +131,8 @@ static struct console scon = {
 	.flags = CON_PRINTBUFFER | CON_NBCON,
 	.write_thread = sconsole_write_thread,
 	.write_atomic = sconsole_write_thread,
+	.device_lock = sconsole_device_lock,
+	.device_unlock = sconsole_device_unlock,
 #else
 	.flags = CON_PRINTBUFFER,
 	.write = sconsole_write_msg,
