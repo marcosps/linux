@@ -4,7 +4,17 @@ config SCONSOLE
 	depends on PRINTK
 	help
 	  Simple Console is a simple implementation of a console driver to exercise
-	  the console and NBCON implementations. If set M, the module name will be
+	  the console. If set M, the module name will be sconsole.
+
+	  If unsure, say Y.
+
+config SCONSOLE_NBCON
+	bool "NBCON Simple Console"
+	depends on PRINTK
+	depends on SCONSOLE
+	help
+	  Simple Console is a simple implementation of a console driver to exercise
+	  the NBCON console implementation. If set M, the module name will be
 	  sconsole.
 
 	  If unsure, say Y.

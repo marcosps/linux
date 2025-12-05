@@ -78,13 +78,29 @@ static struct scon_msg *alloc_msg(const char *msg, unsigned int len)
 	return smsg;
 }
 
-static void write_msg(struct console *con, const char *msg, unsigned int len)
+/*
+ * This function is called both from write_thread and write_atomic since it's
+ * safe to be called in any context already (alloc_msg uses GFP_ATOMIC).
+ */
+static void sconsole_write_msg(struct console *con, const char *msg, unsigned int len)
 {
 	struct scon_msg *smsg = alloc_msg(msg, len);
 
 	/* Always add new messages to the end of the messages list */
 	list_add_tail(&smsg->list, &msgs);
 }
+
+#ifdef CONFIG_SCONSOLE_NBCON
+static void sconsole_write_thread(struct console *con, struct nbcon_write_context *wctxt)
+{
+	if (!nbcon_enter_unsafe(wctxt))
+		return;
+
+	sconsole_write_msg(con, wctxt->outbuf, wctxt->len);
+
+	nbcon_exit_unsafe(wctxt);
+}
+#endif
 
 static struct file_operations scon_fops = {
 	.read = scon_read,
@@ -99,9 +115,14 @@ static struct miscdevice scon_misc = {
 
 static struct console scon = {
 	.name = "sconsole",
-	/* Print all messages since boot */
+#ifdef CONFIG_SCONSOLE_NBCON
+	.flags = CON_PRINTBUFFER | CON_NBCON,
+	.write_thread = sconsole_write_thread,
+	.write_atomic = sconsole_write_thread,
+#else
 	.flags = CON_PRINTBUFFER,
-	.write = write_msg,
+	.write = sconsole_write_msg,
+#endif
 };
 
 static int sconsole_init(void)
