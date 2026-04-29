@@ -241,9 +241,10 @@ function load_failing_mod() {
 	log "$ret"
 }
 
-# unload_mod(modname) - unload a kernel module
+# _remove_mod(modname) - Remove a loaded module, should be called from
+#                        functions.sh only.
 #	modname - module name to unload
-function unload_mod() {
+function _remove_mod() {
 	local mod="$1"
 
 	# Wait for module reference count to clear ...
@@ -259,6 +260,14 @@ function unload_mod() {
 	# Wait for module in sysfs ...
 	loop_until '[[ ! -e "/sys/module/$mod" ]]' ||
 		die "failed to unload module $mod (/sys/module)"
+}
+
+# unload_mod(modname) - unload a kernel module
+#	modname - module name to unload
+function unload_mod() {
+	local mod="$1"
+
+	_remove_mod "$mod"
 }
 
 # unload_lp(modname) - unload a kernel module with a livepatch
